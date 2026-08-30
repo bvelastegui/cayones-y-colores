@@ -40,6 +40,8 @@ use OpenApi\Attributes as OA;
  * @property string $contact_email
  * @property string $contact_phone
  * @property AdmissionStatus $status
+ * @property int|null $representative_id
+ * @property int|null $student_id
  * @property Carbon $application_date
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,6 +55,8 @@ use OpenApi\Attributes as OA;
     'contact_email',
     'contact_phone',
     'status',
+    'representative_id',
+    'student_id',
     'application_date',
 ])]
 class Admission extends Model
@@ -78,5 +82,21 @@ class Admission extends Model
     public function level(): BelongsTo
     {
         return $this->belongsTo(Level::class);
+    }
+
+    /**
+     * @return BelongsTo<Representative, $this>
+     */
+    public function representative(): BelongsTo
+    {
+        return $this->belongsTo(Representative::class);
+    }
+
+    /**
+     * @return BelongsTo<Student, $this>
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
     }
 }

@@ -26,6 +26,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::apiResource('users', UserController::class);
     Route::apiResource('levels', LevelController::class);
     Route::apiResource('admissions', AdmissionController::class);
+    Route::post('/admissions/{admission}/approve', [AdmissionController::class, 'approve'])->name('admissions.approve');
+    Route::post('/admissions/{admission}/reject', [AdmissionController::class, 'reject'])->name('admissions.reject');
     Route::apiResource('representatives', RepresentativeController::class);
     Route::apiResource('teachers', TeacherController::class);
     Route::apiResource('courses', CourseController::class);

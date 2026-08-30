@@ -16,7 +16,7 @@ const router = createRouter({
         {
             path: '/admin',
             name: 'admin.dashboard',
-            component: () => import('@/pages/Admin/Index.vue'),
+            component: () => import('@/pages/Admin/Admissions.vue'),
         },
         {
             path: '/teacher',

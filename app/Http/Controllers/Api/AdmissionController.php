@@ -5,16 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Enums\AdmissionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Admission;
+use App\Services\AdmissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 
 class AdmissionController extends Controller
 {
     public function index(): JsonResponse
     {
-        $admissions = Admission::with('level')->paginate(15);
+        $admissions = Admission::with(['level', 'representative', 'student'])->paginate(15);
 
         return response()->json($admissions);
     }
@@ -29,9 +29,10 @@ class AdmissionController extends Controller
             'representative_names' => ['required', 'string', 'max:255'],
             'contact_email' => ['required', 'email', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:50'],
-            'status' => ['sometimes', 'required', 'string', Rule::enum(AdmissionStatus::class)],
             'application_date' => ['required', 'date'],
         ]);
+
+        $data['status'] = AdmissionStatus::Pending->value;
 
         $admission = Admission::create($data);
 
@@ -40,7 +41,7 @@ class AdmissionController extends Controller
 
     public function show(Admission $admission): JsonResponse
     {
-        return response()->json($admission->load('level'));
+        return response()->json($admission->load(['level', 'representative', 'student']));
     }
 
     public function update(Request $request, Admission $admission): JsonResponse
@@ -53,13 +54,12 @@ class AdmissionController extends Controller
             'representative_names' => ['sometimes', 'required', 'string', 'max:255'],
             'contact_email' => ['sometimes', 'required', 'email', 'max:255'],
             'contact_phone' => ['sometimes', 'required', 'string', 'max:50'],
-            'status' => ['sometimes', 'required', 'string', Rule::enum(AdmissionStatus::class)],
             'application_date' => ['sometimes', 'required', 'date'],
         ]);
 
         $admission->update($data);
 
-        return response()->json($admission->load('level'));
+        return response()->json($admission->load(['level', 'representative', 'student']));
     }
 
     public function destroy(Admission $admission): JsonResponse
@@ -67,5 +67,15 @@ class AdmissionController extends Controller
         $admission->delete();
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    public function approve(Admission $admission, AdmissionService $admissionService): JsonResponse
+    {
+        return response()->json($admissionService->approve($admission));
+    }
+
+    public function reject(Admission $admission, AdmissionService $admissionService): JsonResponse
+    {
+        return response()->json($admissionService->reject($admission));
     }
 }
