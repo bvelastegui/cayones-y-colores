@@ -4,11 +4,12 @@
         "laravel-boost": {
             "type": "local",
             "enabled": true,
-            "command": [
-                "php",
-                "artisan",
-                "boost:mcp"
-            ]
+            "command": ["php", "artisan", "boost:mcp"]
+        },
+        "shadcnVue": {
+            "type": "local",
+            "enabled": true,
+            "command": ["npx", "shadcn-vue@latest", "mcp"]
         }
     }
 }
