@@ -14,6 +14,11 @@ const router = createRouter({
             component: () => import('@/pages/Welcome.vue'),
         },
         {
+            path: '/apply',
+            name: 'admissions.apply',
+            component: () => import('@/pages/Admissions/Apply.vue'),
+        },
+        {
             path: '/admin',
             name: 'admin.dashboard',
             component: () => import('@/pages/Admin/Admissions.vue'),

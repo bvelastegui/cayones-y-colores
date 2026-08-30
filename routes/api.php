@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+Route::get('/levels', [LevelController::class, 'index'])->name('levels.index');
+Route::post('/admissions', [AdmissionController::class, 'store'])->name('admissions.store');
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/user', [AuthController::class, 'user'])->name('user');
@@ -24,8 +27,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::apiResource('users', UserController::class);
-    Route::apiResource('levels', LevelController::class);
-    Route::apiResource('admissions', AdmissionController::class);
+    Route::apiResource('levels', LevelController::class)->except(['index']);
+    Route::apiResource('admissions', AdmissionController::class)->except(['store']);
     Route::post('/admissions/{admission}/approve', [AdmissionController::class, 'approve'])->name('admissions.approve');
     Route::post('/admissions/{admission}/reject', [AdmissionController::class, 'reject'])->name('admissions.reject');
     Route::apiResource('representatives', RepresentativeController::class);
