@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2 } from '@lucide/vue';
+import { CheckCircle2, Palette } from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
@@ -114,11 +114,16 @@ onMounted(() => {
     <div class="bg-background min-h-screen p-4">
         <div class="mx-auto max-w-xl py-12">
             <Card>
-                <CardHeader>
+                <CardHeader class="text-center">
+                    <div
+                        class="bg-primary text-primary-foreground mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl"
+                    >
+                        <Palette class="size-7" />
+                    </div>
                     <CardTitle>Solicitud de admisión</CardTitle>
                     <CardDescription>
                         Completa el siguiente formulario para iniciar el proceso
-                        de admisión de tu hijo.
+                        de admisión de tu hijo en Crayones y Colores.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

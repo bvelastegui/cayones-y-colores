@@ -2,7 +2,13 @@
 import { onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Table,
     TableBody,
@@ -121,7 +127,8 @@ onMounted(() => {
     <div class="bg-background min-h-screen p-6">
         <Card>
             <CardHeader>
-                <CardTitle>Gestión de Admisiones</CardTitle>
+                <CardTitle class="text-primary">Crayones y Colores</CardTitle>
+                <CardDescription>Gestión de admisiones</CardDescription>
             </CardHeader>
             <CardContent>
                 <p v-if="error" class="text-destructive mb-4 text-sm">

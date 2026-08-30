@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Palette } from '@lucide/vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
@@ -75,8 +76,13 @@ async function submit(): Promise<void> {
         class="bg-background flex min-h-screen items-center justify-center p-4"
     >
         <Card class="w-full max-w-sm">
-            <CardHeader>
-                <CardTitle>Iniciar sesión</CardTitle>
+            <CardHeader class="text-center">
+                <div
+                    class="bg-primary text-primary-foreground mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl"
+                >
+                    <Palette class="size-7" />
+                </div>
+                <CardTitle>Crayones y Colores</CardTitle>
                 <CardDescription
                     >Ingresa tus credenciales para continuar</CardDescription
                 >
