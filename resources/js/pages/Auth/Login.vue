@@ -51,7 +51,14 @@ async function submit(): Promise<void> {
         }
 
         localStorage.setItem('token', data.token);
-        await router.push('/');
+
+        const routeByRole: Record<string, string> = {
+            admin: '/admin',
+            teacher: '/teacher',
+            representative: '/parent',
+        };
+
+        await router.push(routeByRole[data.user.role] ?? '/');
     } catch (exception) {
         error.value =
             exception instanceof Error

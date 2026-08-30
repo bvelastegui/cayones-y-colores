@@ -7,19 +7,21 @@ use Database\Factories\TeacherFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int|null $user_id
  * @property string $first_name
  * @property string $last_name
  * @property TeacherType $teacher_type
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['first_name', 'last_name', 'teacher_type'])]
+#[Fillable(['user_id', 'first_name', 'last_name', 'teacher_type'])]
 class Teacher extends Model
 {
     /** @use HasFactory<TeacherFactory> */
@@ -33,6 +35,14 @@ class Teacher extends Model
         return [
             'teacher_type' => TeacherType::class,
         ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

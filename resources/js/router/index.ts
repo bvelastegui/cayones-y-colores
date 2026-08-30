@@ -13,6 +13,21 @@ const router = createRouter({
             name: 'home',
             component: () => import('@/pages/Welcome.vue'),
         },
+        {
+            path: '/admin',
+            name: 'admin.dashboard',
+            component: () => import('@/pages/Admin/Index.vue'),
+        },
+        {
+            path: '/teacher',
+            name: 'teacher.dashboard',
+            component: () => import('@/pages/Teacher/Index.vue'),
+        },
+        {
+            path: '/parent',
+            name: 'parent.dashboard',
+            component: () => import('@/pages/Parent/Index.vue'),
+        },
     ],
 });
 

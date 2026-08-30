@@ -20,7 +20,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/user', [AuthController::class, 'user'])->name('user');
+});
 
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::apiResource('users', UserController::class);
     Route::apiResource('levels', LevelController::class);
     Route::apiResource('admissions', AdmissionController::class);
