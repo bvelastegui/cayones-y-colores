@@ -1,12 +1,16 @@
-import inertia from '@inertiajs/vite';
-import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('./resources/js', import.meta.url)),
+        },
+    },
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
@@ -17,7 +21,6 @@ export default defineConfig({
                 }),
             ],
         }),
-        inertia(),
         tailwindcss(),
         vue({
             template: {
@@ -26,9 +29,6 @@ export default defineConfig({
                     includeAbsolute: false,
                 },
             },
-        }),
-        wayfinder({
-            formVariants: true,
         }),
     ]),
     server: {

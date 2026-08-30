@@ -1,10 +1,8 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const app = createApp(App);
 
-void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
-    progress: {
-        color: '#4B5563',
-    },
-});
+app.use(router);
+app.mount('#app');
