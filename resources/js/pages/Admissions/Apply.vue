@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { CheckCircle2, Palette } from '@lucide/vue';
+import {
+    CheckCircle2,
+    Clock,
+    Mail,
+    Palette,
+    Phone,
+    Smile,
+    Users,
+} from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -111,162 +120,277 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-background min-h-screen p-4">
-        <div class="mx-auto max-w-xl py-12">
-            <Card>
-                <CardHeader class="text-center">
-                    <div
-                        class="bg-primary text-primary-foreground mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl"
-                    >
-                        <Palette class="size-7" />
-                    </div>
-                    <CardTitle>Solicitud de admisión</CardTitle>
-                    <CardDescription>
-                        Completa el siguiente formulario para iniciar el proceso
-                        de admisión de tu hijo en Crayones y Colores.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div
-                        v-if="submitted"
-                        class="flex flex-col items-center gap-4 py-8 text-center"
-                    >
-                        <CheckCircle2 class="text-primary size-12" />
-                        <p class="text-lg font-medium">¡Solicitud recibida!</p>
-                        <p class="text-muted-foreground text-sm">
-                            Revisaremos la información y te contactaremos
-                            pronto.
+    <PublicLayout>
+        <div class="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+            <div
+                class="absolute inset-x-0 top-0 -z-10 flex justify-center gap-4 opacity-15"
+            >
+                <div class="bg-secondary size-40 rounded-full blur-3xl" />
+                <div class="bg-accent size-40 rounded-full blur-3xl" />
+                <div class="bg-primary size-40 rounded-full blur-3xl" />
+            </div>
+
+            <div class="grid gap-10 lg:grid-cols-2 lg:items-start">
+                <div class="space-y-6">
+                    <div>
+                        <h1
+                            class="text-3xl font-extrabold tracking-tight lg:text-4xl"
+                        >
+                            Da el primer paso hacia
+                            <span class="text-primary">Crayones y Colores</span>
+                        </h1>
+                        <p class="text-muted-foreground mt-3">
+                            Completa la solicitud de admisión y nuestro equipo
+                            se pondrá en contacto contigo para continuar el
+                            proceso de inscripción.
                         </p>
-                        <Button variant="outline" @click="router.push('/')">
-                            Volver al inicio
-                        </Button>
                     </div>
 
-                    <form v-else @submit.prevent="submit">
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel for="level"
-                                    >Nivel al que aplica</FieldLabel
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <Card class="border-none shadow-sm">
+                            <CardHeader class="pb-2">
+                                <Clock class="text-primary size-6" />
+                                <CardTitle class="text-base"
+                                    >Proceso ágil</CardTitle
                                 >
-                                <Select v-model="levelId">
-                                    <SelectTrigger id="level">
-                                        <SelectValue
-                                            placeholder="Selecciona un nivel"
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem
-                                            v-for="level in levels"
-                                            :key="level.id"
-                                            :value="String(level.id)"
-                                        >
-                                            {{ level.name }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-
-                            <Field>
-                                <FieldLabel for="first_name"
-                                    >Nombres del aspirante</FieldLabel
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription
+                                    >Respuesta en pocos días
+                                    hábiles.</CardDescription
                                 >
-                                <Input
-                                    id="first_name"
-                                    v-model="firstName"
-                                    placeholder="Ej. Luciana"
-                                    required
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel for="last_name"
-                                    >Apellidos del aspirante</FieldLabel
+                            </CardContent>
+                        </Card>
+                        <Card class="border-none shadow-sm">
+                            <CardHeader class="pb-2">
+                                <Users class="text-accent size-6" />
+                                <CardTitle class="text-base"
+                                    >Acompañamiento</CardTitle
                                 >
-                                <Input
-                                    id="last_name"
-                                    v-model="lastName"
-                                    placeholder="Ej. Santos"
-                                    required
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel for="birth_date"
-                                    >Fecha de nacimiento</FieldLabel
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription
+                                    >Te guiamos en cada etapa de la
+                                    inscripción.</CardDescription
                                 >
-                                <Input
-                                    id="birth_date"
-                                    v-model="birthDate"
-                                    type="date"
-                                    required
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel for="representative_names"
-                                    >Nombres del representante</FieldLabel
+                            </CardContent>
+                        </Card>
+                        <Card class="border-none shadow-sm">
+                            <CardHeader class="pb-2">
+                                <Smile class="text-secondary size-6" />
+                                <CardTitle class="text-base"
+                                    >Ambiente cálido</CardTitle
                                 >
-                                <Input
-                                    id="representative_names"
-                                    v-model="representativeNames"
-                                    placeholder="Ej. María Santos"
-                                    required
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel for="email"
-                                    >Correo electrónico</FieldLabel
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription
+                                    >Instalaciones pensadas para los
+                                    pequeños.</CardDescription
                                 >
-                                <Input
-                                    id="email"
-                                    v-model="email"
-                                    type="email"
-                                    placeholder="maria@ejemplo.com"
-                                    required
-                                />
-                            </Field>
+                            </CardContent>
+                        </Card>
+                        <Card class="border-none shadow-sm">
+                            <CardHeader class="pb-2">
+                                <CheckCircle2 class="text-primary size-6" />
+                                <CardTitle class="text-base"
+                                    >Información clara</CardTitle
+                                >
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription
+                                    >Conoce cupos, niveles y
+                                    requisitos.</CardDescription
+                                >
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                            <Field>
-                                <FieldLabel for="phone">Teléfono</FieldLabel>
-                                <Input
-                                    id="phone"
-                                    v-model="phone"
-                                    type="tel"
-                                    placeholder="0991234567"
-                                    required
-                                />
-                            </Field>
-
-                            <FieldError v-if="error" :errors="[error]" />
-                        </FieldGroup>
-
-                        <div class="mt-6 flex flex-col gap-3">
-                            <Button
-                                type="submit"
-                                class="w-full"
-                                :disabled="loading"
+                    <Card
+                        class="from-primary/10 to-accent/10 border-none bg-gradient-to-br shadow-sm"
+                    >
+                        <CardHeader>
+                            <CardTitle class="text-base"
+                                >¿Tienes dudas?</CardTitle
                             >
-                                <Spinner
-                                    v-if="loading"
-                                    data-icon="inline-start"
-                                />
-                                {{
-                                    loading ? 'Enviando...' : 'Enviar solicitud'
-                                }}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                class="w-full"
-                                @click="router.push('/')"
+                        </CardHeader>
+                        <CardContent class="space-y-2 text-sm">
+                            <div
+                                class="text-muted-foreground flex items-center gap-2"
                             >
-                                Cancelar
+                                <Phone class="size-4" />
+                                <span>+593 99 123 4567</span>
+                            </div>
+                            <div
+                                class="text-muted-foreground flex items-center gap-2"
+                            >
+                                <Mail class="size-4" />
+                                <span>admisiones@crayonesycolores.edu.ec</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card class="shadow-lg">
+                    <CardHeader class="text-center">
+                        <div
+                            class="bg-primary text-primary-foreground mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl"
+                        >
+                            <Palette class="size-7" />
+                        </div>
+                        <CardTitle>Solicitud de admisión</CardTitle>
+                        <CardDescription>
+                            Completa el siguiente formulario para iniciar el
+                            proceso de admisión de tu hijo.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div
+                            v-if="submitted"
+                            class="flex flex-col items-center gap-4 py-8 text-center"
+                        >
+                            <CheckCircle2 class="text-primary size-12" />
+                            <p class="text-lg font-medium">
+                                ¡Solicitud recibida!
+                            </p>
+                            <p class="text-muted-foreground text-sm">
+                                Revisaremos la información y te contactaremos
+                                pronto.
+                            </p>
+                            <Button variant="outline" @click="router.push('/')">
+                                Volver al inicio
                             </Button>
                         </div>
-                    </form>
-                </CardContent>
-            </Card>
+
+                        <form v-else @submit.prevent="submit">
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel for="level"
+                                        >Nivel al que aplica</FieldLabel
+                                    >
+                                    <Select v-model="levelId">
+                                        <SelectTrigger id="level">
+                                            <SelectValue
+                                                placeholder="Selecciona un nivel"
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="level in levels"
+                                                :key="level.id"
+                                                :value="String(level.id)"
+                                            >
+                                                {{ level.name }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="first_name"
+                                        >Nombres del aspirante</FieldLabel
+                                    >
+                                    <Input
+                                        id="first_name"
+                                        v-model="firstName"
+                                        placeholder="Ej. Luciana"
+                                        required
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="last_name"
+                                        >Apellidos del aspirante</FieldLabel
+                                    >
+                                    <Input
+                                        id="last_name"
+                                        v-model="lastName"
+                                        placeholder="Ej. Santos"
+                                        required
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="birth_date"
+                                        >Fecha de nacimiento</FieldLabel
+                                    >
+                                    <Input
+                                        id="birth_date"
+                                        v-model="birthDate"
+                                        type="date"
+                                        required
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="representative_names"
+                                        >Nombres del representante</FieldLabel
+                                    >
+                                    <Input
+                                        id="representative_names"
+                                        v-model="representativeNames"
+                                        placeholder="Ej. María Santos"
+                                        required
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="email"
+                                        >Correo electrónico</FieldLabel
+                                    >
+                                    <Input
+                                        id="email"
+                                        v-model="email"
+                                        type="email"
+                                        placeholder="maria@ejemplo.com"
+                                        required
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel for="phone"
+                                        >Teléfono</FieldLabel
+                                    >
+                                    <Input
+                                        id="phone"
+                                        v-model="phone"
+                                        type="tel"
+                                        placeholder="0991234567"
+                                        required
+                                    />
+                                </Field>
+
+                                <FieldError v-if="error" :errors="[error]" />
+                            </FieldGroup>
+
+                            <div class="mt-6 flex flex-col gap-3">
+                                <Button
+                                    type="submit"
+                                    class="w-full"
+                                    :disabled="loading"
+                                >
+                                    <Spinner
+                                        v-if="loading"
+                                        data-icon="inline-start"
+                                    />
+                                    {{
+                                        loading
+                                            ? 'Enviando...'
+                                            : 'Enviar solicitud'
+                                    }}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="w-full"
+                                    @click="router.push('/')"
+                                >
+                                    Cancelar
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-    </div>
+    </PublicLayout>
 </template>
