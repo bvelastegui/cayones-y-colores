@@ -15,13 +15,15 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int|null $user_id
+ * @property string|null $id_card
  * @property string $first_name
  * @property string $last_name
+ * @property string|null $email
  * @property TeacherType $teacher_type
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['user_id', 'first_name', 'last_name', 'teacher_type'])]
+#[Fillable(['user_id', 'id_card', 'first_name', 'last_name', 'email', 'teacher_type'])]
 class Teacher extends Model
 {
     /** @use HasFactory<TeacherFactory> */
