@@ -115,22 +115,19 @@ const dashboardByRole: Record<string, string> = {
     representative: '/parent',
 };
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
     const auth = useAuth(router);
 
     if (to.meta.public) {
         if (to.meta.guest && auth.isAuthenticated.value) {
-            const dashboard =
-                dashboardByRole[auth.user.value?.role ?? ''] ?? '/';
-
-            return next(dashboard);
+            return dashboardByRole[auth.user.value?.role ?? ''] ?? '/';
         }
 
-        return next();
+        return true;
     }
 
     if (!auth.token.value) {
-        return next('/login');
+        return '/login';
     }
 
     if (!auth.user.value) {
@@ -138,7 +135,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (!auth.user.value) {
-        return next('/login');
+        return '/login';
     }
 
     const allowedRoles = (to.meta.roles as string[] | undefined) ?? [];
@@ -147,12 +144,10 @@ router.beforeEach(async (to, from, next) => {
         allowedRoles.length > 0 &&
         !allowedRoles.includes(auth.user.value.role)
     ) {
-        const dashboard = dashboardByRole[auth.user.value.role] ?? '/';
-
-        return next(dashboard);
+        return dashboardByRole[auth.user.value.role] ?? '/';
     }
 
-    next();
+    return true;
 });
 
 export default router;
