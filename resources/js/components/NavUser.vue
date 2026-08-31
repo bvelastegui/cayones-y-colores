@@ -28,8 +28,8 @@ import {
 import { useAuth } from '@/composables/auth';
 
 const { isMobile } = useSidebar();
-const auth = useAuth();
 const router = useRouter();
+const auth = useAuth(router);
 
 const user = computed(() => auth.user.value);
 
