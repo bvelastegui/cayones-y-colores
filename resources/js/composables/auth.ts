@@ -6,6 +6,7 @@ export interface User {
     name: string;
     email: string;
     role: 'admin' | 'teacher' | 'representative';
+    avatar?: string;
 }
 
 const token = ref<string | null>(localStorage.getItem('token'));

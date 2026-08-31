@@ -23,7 +23,11 @@ class MeController extends Controller
         }
 
         $students = $representative->students()
-            ->with(['admission.level'])
+            ->with([
+                'admission.level',
+                'enrollments' => fn ($query) => $query->where('status', EnrollmentStatus::Active)->limit(1),
+                'enrollments.course.level',
+            ])
             ->get();
 
         return response()->json($students);
