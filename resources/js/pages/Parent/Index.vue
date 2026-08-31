@@ -2,6 +2,7 @@
 import { BookOpen, GraduationCap, UserPlus } from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -69,20 +70,15 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-background min-h-screen p-6">
-        <div class="mx-auto max-w-4xl space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">
-                        Portal de Padres
-                    </h1>
-                    <p class="text-muted-foreground">
-                        Gestiona la información y matrícula de tus hijos.
-                    </p>
-                </div>
-                <Button variant="outline" @click="router.push('/')">
-                    Volver al inicio
-                </Button>
+    <AppLayout>
+        <div class="space-y-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">
+                    Portal de Padres
+                </h1>
+                <p class="text-muted-foreground">
+                    Gestiona la información y matrícula de tus hijos.
+                </p>
             </div>
 
             <p v-if="error" class="text-destructive text-sm">{{ error }}</p>
@@ -131,7 +127,7 @@ onMounted(() => {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             <Button
                                 v-if="!isActive(student)"
                                 @click="
@@ -163,5 +159,5 @@ onMounted(() => {
                 </Card>
             </div>
         </div>
-    </div>
+    </AppLayout>
 </template>

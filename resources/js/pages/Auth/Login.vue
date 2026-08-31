@@ -3,6 +3,7 @@ import { Palette, ShieldCheck, Sparkles, Users } from '@lucide/vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { useAuth } from '@/composables/auth';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -22,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
 const router = useRouter();
+const auth = useAuth(router);
 
 const email = ref('');
 const password = ref('');
@@ -52,7 +54,7 @@ async function submit(): Promise<void> {
             throw new Error(data.message ?? 'Error al iniciar sesión.');
         }
 
-        localStorage.setItem('token', data.token);
+        auth.setSession(data.token, data.user);
 
         const routeByRole: Record<string, string> = {
             admin: '/admin',

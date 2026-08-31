@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { CheckCircle2, Users } from '@lucide/vue';
+import { CheckCircle2, ChevronLeft, Users } from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,8 +45,8 @@ async function fetchData(): Promise<void> {
     error.value = '';
 
     try {
-        const [studentResponse, coursesResponse] = await Promise.all([
-            fetch(`/api/me/students/${studentId}/courses`, {
+        const [studentsResponse, coursesResponse] = await Promise.all([
+            fetch('/api/me/students', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/json',
@@ -59,22 +60,13 @@ async function fetchData(): Promise<void> {
             }),
         ]);
 
-        if (!studentResponse.ok || !coursesResponse.ok) {
+        if (!studentsResponse.ok || !coursesResponse.ok) {
             throw new Error('Error al cargar la información de matrícula.');
         }
 
-        const coursesData = await coursesResponse.json();
-        courses.value = coursesData;
-
-        const allStudents = await fetch('/api/me/students', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        });
-        const students = await allStudents.json();
-        student.value =
-            students.find((s: Student) => s.id === studentId) ?? null;
+        const students = (await studentsResponse.json()) as Student[];
+        student.value = students.find((s) => s.id === studentId) ?? null;
+        courses.value = await coursesResponse.json();
     } catch (exception) {
         error.value =
             exception instanceof Error
@@ -132,23 +124,27 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-background min-h-screen p-6">
-        <div class="mx-auto max-w-4xl space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">
-                        Matrícula online
-                    </h1>
-                    <p class="text-muted-foreground">
-                        Selecciona el paralelo para
-                        <span class="text-foreground font-medium">
-                            {{ student?.first_name }} {{ student?.last_name }}
-                        </span>
-                    </p>
-                </div>
-                <Button variant="outline" @click="router.push('/parent')">
-                    Volver
-                </Button>
+    <AppLayout>
+        <div class="space-y-6">
+            <Button
+                variant="ghost"
+                class="-ml-3"
+                @click="router.push('/parent')"
+            >
+                <ChevronLeft class="size-4" data-icon="inline-start" />
+                Volver a mis hijos
+            </Button>
+
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">
+                    Matrícula online
+                </h1>
+                <p class="text-muted-foreground">
+                    Selecciona el paralelo para
+                    <span class="text-foreground font-medium">
+                        {{ student?.first_name }} {{ student?.last_name }}
+                    </span>
+                </p>
             </div>
 
             <p v-if="error" class="text-destructive text-sm">{{ error }}</p>
@@ -231,5 +227,5 @@ onMounted(() => {
                 </Card>
             </div>
         </div>
-    </div>
+    </AppLayout>
 </template>

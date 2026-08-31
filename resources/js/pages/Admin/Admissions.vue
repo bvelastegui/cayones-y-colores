@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -124,87 +125,99 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="bg-background min-h-screen p-6">
-        <Card>
-            <CardHeader>
-                <CardTitle class="text-primary">Crayones y Colores</CardTitle>
-                <CardDescription>Gestión de admisiones</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p v-if="error" class="text-destructive mb-4 text-sm">
-                    {{ error }}
-                </p>
-                <p v-if="loading" class="text-muted-foreground text-sm">
-                    Cargando...
-                </p>
-                <Table v-else>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Aspirante</TableHead>
-                            <TableHead>Representante</TableHead>
-                            <TableHead>Contacto</TableHead>
-                            <TableHead>Nivel</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead class="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow
-                            v-for="admission in admissions"
-                            :key="admission.id"
-                        >
-                            <TableCell>{{ admission.id }}</TableCell>
-                            <TableCell>
-                                {{ admission.applicant_first_name }}
-                                {{ admission.applicant_last_name }}
-                            </TableCell>
-                            <TableCell>{{
-                                admission.representative_names
-                            }}</TableCell>
-                            <TableCell>
-                                <div class="text-sm">
-                                    {{ admission.contact_email }}
-                                </div>
-                                <div class="text-muted-foreground text-xs">
-                                    {{ admission.contact_phone }}
-                                </div>
-                            </TableCell>
-                            <TableCell>{{
-                                admission.level?.name ?? '-'
-                            }}</TableCell>
-                            <TableCell>{{
-                                admission.application_date
-                            }}</TableCell>
-                            <TableCell>
-                                <Badge
-                                    :variant="statusVariant(admission.status)"
+    <AppLayout>
+        <div class="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle class="text-primary"
+                        >Crayones y Colores</CardTitle
+                    >
+                    <CardDescription>Gestión de admisiones</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p v-if="error" class="text-destructive mb-4 text-sm">
+                        {{ error }}
+                    </p>
+                    <p v-if="loading" class="text-muted-foreground text-sm">
+                        Cargando...
+                    </p>
+                    <Table v-else>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Aspirante</TableHead>
+                                <TableHead>Representante</TableHead>
+                                <TableHead>Contacto</TableHead>
+                                <TableHead>Nivel</TableHead>
+                                <TableHead>Fecha</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead class="text-right"
+                                    >Acciones</TableHead
                                 >
-                                    {{ statusLabel(admission.status) }}
-                                </Badge>
-                            </TableCell>
-                            <TableCell class="flex justify-end gap-2">
-                                <Button
-                                    v-if="admission.status === 'pending'"
-                                    size="sm"
-                                    @click="updateStatus(admission, 'approve')"
-                                >
-                                    Aprobar
-                                </Button>
-                                <Button
-                                    v-if="admission.status === 'pending'"
-                                    size="sm"
-                                    variant="outline"
-                                    @click="updateStatus(admission, 'reject')"
-                                >
-                                    Rechazar
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    </div>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow
+                                v-for="admission in admissions"
+                                :key="admission.id"
+                            >
+                                <TableCell>{{ admission.id }}</TableCell>
+                                <TableCell>
+                                    {{ admission.applicant_first_name }}
+                                    {{ admission.applicant_last_name }}
+                                </TableCell>
+                                <TableCell>{{
+                                    admission.representative_names
+                                }}</TableCell>
+                                <TableCell>
+                                    <div class="text-sm">
+                                        {{ admission.contact_email }}
+                                    </div>
+                                    <div class="text-muted-foreground text-xs">
+                                        {{ admission.contact_phone }}
+                                    </div>
+                                </TableCell>
+                                <TableCell>{{
+                                    admission.level?.name ?? '-'
+                                }}</TableCell>
+                                <TableCell>{{
+                                    admission.application_date
+                                }}</TableCell>
+                                <TableCell>
+                                    <Badge
+                                        :variant="
+                                            statusVariant(admission.status)
+                                        "
+                                    >
+                                        {{ statusLabel(admission.status) }}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="flex justify-end gap-2">
+                                    <Button
+                                        v-if="admission.status === 'pending'"
+                                        size="sm"
+                                        @click="
+                                            updateStatus(admission, 'approve')
+                                        "
+                                    >
+                                        Aprobar
+                                    </Button>
+                                    <Button
+                                        v-if="admission.status === 'pending'"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="
+                                            updateStatus(admission, 'reject')
+                                        "
+                                    >
+                                        Rechazar
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    </AppLayout>
 </template>
