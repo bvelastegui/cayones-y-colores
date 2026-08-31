@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import type { LucideIcon } from '@lucide/vue';
 import {
+    Baby,
+    Banknote,
     BookOpen,
+    GraduationCap,
     HeartHandshake,
+    Layers,
     LayoutDashboard,
+    Receipt,
+    School,
     Settings,
+    UserCheck,
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -21,17 +28,11 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/composables/auth';
 
-interface NavSubItem {
-    title: string;
-    url: string;
-}
-
 interface NavItem {
     title: string;
     url: string;
     icon: LucideIcon;
     isActive?: boolean;
-    items?: NavSubItem[];
 }
 
 const props = defineProps<{
@@ -40,7 +41,7 @@ const props = defineProps<{
 
 const auth = useAuth();
 
-const navItems = computed<NavItem[]>(() => {
+const mainItems = computed<NavItem[]>(() => {
     switch (auth.user.value?.role) {
         case 'admin':
             return [
@@ -51,27 +52,9 @@ const navItems = computed<NavItem[]>(() => {
                     isActive: true,
                 },
                 {
-                    title: 'Administración',
-                    url: '#',
+                    title: 'Admisiones',
+                    url: '/admin/admissions',
                     icon: Settings,
-                    items: [
-                        { title: 'Admisiones', url: '/admin/admissions' },
-                        { title: 'Usuarios', url: '/admin/users' },
-                        { title: 'Niveles', url: '/admin/levels' },
-                        { title: 'Cursos', url: '/admin/courses' },
-                        {
-                            title: 'Representantes',
-                            url: '/admin/representatives',
-                        },
-                        { title: 'Docentes', url: '/admin/teachers' },
-                        { title: 'Estudiantes', url: '/admin/students' },
-                        {
-                            title: 'Asignaciones',
-                            url: '/admin/course-teachers',
-                        },
-                        { title: 'Pensiones', url: '/admin/tuitions' },
-                        { title: 'Pagos', url: '/admin/payments' },
-                    ],
                 },
             ];
         case 'teacher':
@@ -89,15 +72,36 @@ const navItems = computed<NavItem[]>(() => {
                     url: '/parent',
                     icon: HeartHandshake,
                 },
-                {
-                    title: 'Comunidad',
-                    url: '#',
-                    icon: Users,
-                },
             ];
         default:
             return [];
     }
+});
+
+const adminItems = computed<NavItem[]>(() => {
+    if (auth.user.value?.role !== 'admin') {
+        return [];
+    }
+
+    return [
+        { title: 'Usuarios', url: '/admin/users', icon: Users },
+        { title: 'Niveles', url: '/admin/levels', icon: Layers },
+        { title: 'Cursos', url: '/admin/courses', icon: School },
+        {
+            title: 'Representantes',
+            url: '/admin/representatives',
+            icon: HeartHandshake,
+        },
+        { title: 'Docentes', url: '/admin/teachers', icon: GraduationCap },
+        { title: 'Estudiantes', url: '/admin/students', icon: Baby },
+        {
+            title: 'Asignaciones',
+            url: '/admin/course-teachers',
+            icon: UserCheck,
+        },
+        { title: 'Pensiones', url: '/admin/tuitions', icon: Receipt },
+        { title: 'Pagos', url: '/admin/payments', icon: Banknote },
+    ];
 });
 </script>
 
@@ -107,7 +111,12 @@ const navItems = computed<NavItem[]>(() => {
             <TeamSwitcher />
         </SidebarHeader>
         <SidebarContent>
-            <NavMain :items="navItems" />
+            <NavMain :items="mainItems" />
+            <NavMain
+                v-if="adminItems.length > 0"
+                label="Administración"
+                :items="adminItems"
+            />
         </SidebarContent>
         <SidebarFooter>
             <NavUser />
