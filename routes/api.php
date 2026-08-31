@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RepresentativeController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TeacherController;
+use App\Http\Controllers\Api\TeacherDashboardController;
 use App\Http\Controllers\Api\TuitionController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,13 @@ Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(
     Route::get('/students', [MeController::class, 'students'])->name('me.students');
     Route::get('/students/{student}/courses', [MeController::class, 'availableCourses'])->name('me.courses');
     Route::post('/enrollments', [MeController::class, 'enroll'])->name('me.enroll');
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->prefix('teacher')->group(function (): void {
+    Route::get('/courses', [TeacherDashboardController::class, 'courses'])->name('teacher.courses');
+    Route::get('/courses/{course}/students', [TeacherDashboardController::class, 'students'])->name('teacher.students');
+    Route::get('/reports', [TeacherDashboardController::class, 'reports'])->name('teacher.reports');
+    Route::post('/reports', [TeacherDashboardController::class, 'storeReport'])->name('teacher.reports.store');
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
