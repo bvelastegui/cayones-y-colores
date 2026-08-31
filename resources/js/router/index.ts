@@ -33,6 +33,11 @@ const router = createRouter({
             name: 'parent.dashboard',
             component: () => import('@/pages/Parent/Index.vue'),
         },
+        {
+            path: '/parent/enroll/:studentId',
+            name: 'parent.enroll',
+            component: () => import('@/pages/Parent/Enroll.vue'),
+        },
     ],
 });
 

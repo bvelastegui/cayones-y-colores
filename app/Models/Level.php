@@ -14,10 +14,12 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property int $max_capacity
  * @property int $student_aux_ratio
+ * @property float $enrollment_fee
+ * @property float $monthly_fee
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'max_capacity', 'student_aux_ratio'])]
+#[Fillable(['name', 'max_capacity', 'student_aux_ratio', 'enrollment_fee', 'monthly_fee'])]
 class Level extends Model
 {
     /** @use HasFactory<LevelFactory> */
@@ -31,6 +33,8 @@ class Level extends Model
         return [
             'max_capacity' => 'integer',
             'student_aux_ratio' => 'integer',
+            'enrollment_fee' => 'decimal:2',
+            'monthly_fee' => 'decimal:2',
         ];
     }
 
