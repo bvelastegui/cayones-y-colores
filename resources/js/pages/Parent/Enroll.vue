@@ -13,6 +13,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { useCurrentStudent } from '@/composables/currentStudent';
 
 interface Course {
     id: number;
@@ -25,10 +26,15 @@ interface Student {
     id: number;
     first_name: string;
     last_name: string;
+    enrollments?: {
+        status: string;
+        course?: { level?: { name: string } } | null;
+    }[];
 }
 
 const router = useRouter();
 const route = useRoute();
+const { setCurrentStudent } = useCurrentStudent();
 const studentId = Number(route.params.studentId);
 
 const student = ref<Student | null>(null);
@@ -67,6 +73,19 @@ async function fetchData(): Promise<void> {
         const students = (await studentsResponse.json()) as Student[];
         student.value = students.find((s) => s.id === studentId) ?? null;
         courses.value = await coursesResponse.json();
+
+        if (student.value) {
+            const activeEnrollment = student.value.enrollments?.find(
+                (enrollment) => enrollment.status === 'active',
+            );
+
+            setCurrentStudent({
+                id: student.value.id,
+                first_name: student.value.first_name,
+                last_name: student.value.last_name,
+                course_name: activeEnrollment?.course?.level?.name ?? null,
+            });
+        }
     } catch (exception) {
         error.value =
             exception instanceof Error

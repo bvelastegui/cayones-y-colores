@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { BookOpen, GraduationCap, UserPlus } from '@lucide/vue';
-import { onMounted, ref } from 'vue';
+import { BookOpen, GraduationCap, UserPlus, Users } from '@lucide/vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCurrentStudent } from '@/composables/currentStudent';
+
+interface Enrollment {
+    status: string;
+    course?: { level?: { name: string } } | null;
+}
 
 interface Student {
     id: number;
@@ -19,15 +25,28 @@ interface Student {
     last_name: string;
     birth_date: string;
     admission?: { level?: { name: string } } | null;
-    enrollments?: { status: string }[];
+    enrollments?: Enrollment[];
 }
 
 const router = useRouter();
+const { selectedStudent, setCurrentStudent } = useCurrentStudent();
+
 const students = ref<Student[]>([]);
 const loading = ref(false);
 const error = ref('');
 
 const token = localStorage.getItem('token') ?? '';
+
+const selectedRecord = computed<Student | undefined>(() =>
+    students.value.find((student) => student.id === selectedStudent.value?.id),
+);
+
+const isSelectedActive = computed(
+    () =>
+        selectedRecord.value?.enrollments?.some(
+            (enrollment) => enrollment.status === 'active',
+        ) ?? false,
+);
 
 async function fetchStudents(): Promise<void> {
     loading.value = true;
@@ -46,6 +65,20 @@ async function fetchStudents(): Promise<void> {
         }
 
         students.value = await response.json();
+
+        if (students.value.length > 0 && !selectedStudent.value) {
+            const first = students.value[0];
+
+            setCurrentStudent({
+                id: first.id,
+                first_name: first.first_name,
+                last_name: first.last_name,
+                course_name:
+                    first.enrollments?.find(
+                        (enrollment) => enrollment.status === 'active',
+                    )?.course?.level?.name ?? null,
+            });
+        }
     } catch (exception) {
         error.value =
             exception instanceof Error
@@ -62,6 +95,26 @@ function isActive(student: Student): boolean {
             (enrollment) => enrollment.status === 'active',
         ) ?? false
     );
+}
+
+function selectStudent(student: Student): void {
+    setCurrentStudent({
+        id: student.id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        course_name:
+            student.enrollments?.find(
+                (enrollment) => enrollment.status === 'active',
+            )?.course?.level?.name ?? null,
+    });
+}
+
+function enrollSelected(): void {
+    if (!selectedStudent.value) {
+        return;
+    }
+
+    router.push(`/parent/enroll/${selectedStudent.value.id}`);
 }
 
 onMounted(() => {
@@ -92,71 +145,113 @@ onMounted(() => {
                 espera la aprobación.
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <Card
-                    v-for="student in students"
-                    :key="student.id"
-                    class="border-none shadow-sm"
-                >
-                    <CardHeader>
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <CardTitle
-                                    >{{ student.first_name }}
-                                    {{ student.last_name }}</CardTitle
-                                >
-                                <CardDescription>
-                                    Nivel de interés:
-                                    {{
-                                        student.admission?.level?.name ??
-                                        'Por definir'
-                                    }}
-                                </CardDescription>
-                            </div>
-                            <Badge
-                                :variant="
-                                    isActive(student) ? 'default' : 'secondary'
-                                "
-                            >
+            <Card
+                v-if="selectedStudent && !loading"
+                class="border-primary/20 bg-primary/5"
+            >
+                <CardHeader>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <CardTitle>
+                                {{ selectedStudent.first_name }}
+                                {{ selectedStudent.last_name }}
+                            </CardTitle>
+                            <CardDescription>
+                                Estudiante seleccionado ·
                                 {{
-                                    isActive(student)
-                                        ? 'Matriculado'
-                                        : 'Pendiente de matrícula'
+                                    selectedStudent.course_name ??
+                                    'Sin curso asignado'
                                 }}
-                            </Badge>
+                            </CardDescription>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="flex flex-wrap gap-2">
-                            <Button
-                                v-if="!isActive(student)"
-                                @click="
-                                    router.push(`/parent/enroll/${student.id}`)
-                                "
-                            >
-                                <UserPlus
-                                    class="size-4"
-                                    data-icon="inline-start"
-                                />
-                                Matricular
-                            </Button>
-                            <Button v-else variant="outline" disabled>
-                                <GraduationCap
-                                    class="size-4"
-                                    data-icon="inline-start"
-                                />
-                                Ver matrícula
-                            </Button>
-                            <Button variant="outline" disabled>
-                                <BookOpen
-                                    class="size-4"
-                                    data-icon="inline-start"
-                                />
-                                Informes
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Badge
+                            :variant="
+                                isSelectedActive ? 'default' : 'secondary'
+                            "
+                        >
+                            {{
+                                isSelectedActive
+                                    ? 'Matriculado'
+                                    : 'Pendiente de matrícula'
+                            }}
+                        </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            v-if="!isSelectedActive"
+                            @click="enrollSelected"
+                        >
+                            <UserPlus class="size-4" data-icon="inline-start" />
+                            Matricular
+                        </Button>
+                        <Button v-else variant="outline" disabled>
+                            <GraduationCap
+                                class="size-4"
+                                data-icon="inline-start"
+                            />
+                            Ver matrícula
+                        </Button>
+                        <Button variant="outline" disabled>
+                            <BookOpen class="size-4" data-icon="inline-start" />
+                            Informes
+                        </Button>
+                        <Button variant="outline" disabled>
+                            <Users class="size-4" data-icon="inline-start" />
+                            Asistencia
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div v-if="students.length > 1 && !loading">
+                <h2 class="text-muted-foreground text-sm font-semibold">
+                    Todos mis hijos
+                </h2>
+                <div class="grid gap-4 pt-3 sm:grid-cols-2">
+                    <Card
+                        v-for="student in students"
+                        :key="student.id"
+                        class="cursor-pointer border-none shadow-sm transition-shadow hover:shadow-md"
+                        :class="{
+                            'ring-primary ring-2':
+                                student.id === selectedStudent?.id,
+                        }"
+                        @click="selectStudent(student)"
+                    >
+                        <CardHeader>
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <CardTitle
+                                        >{{ student.first_name }}
+                                        {{ student.last_name }}</CardTitle
+                                    >
+                                    <CardDescription>
+                                        Nivel de interés:
+                                        {{
+                                            student.admission?.level?.name ??
+                                            'Por definir'
+                                        }}
+                                    </CardDescription>
+                                </div>
+                                <Badge
+                                    :variant="
+                                        isActive(student)
+                                            ? 'default'
+                                            : 'secondary'
+                                    "
+                                >
+                                    {{
+                                        isActive(student)
+                                            ? 'Matriculado'
+                                            : 'Pendiente de matrícula'
+                                    }}
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </div>
             </div>
         </div>
     </AppLayout>
