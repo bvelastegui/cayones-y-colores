@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { BookOpen, GraduationCap, UserPlus, Users } from '@lucide/vue';
+import {
+    AlertCircle,
+    BookOpen,
+    CreditCard,
+    GraduationCap,
+    UserPlus,
+    Users,
+} from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -19,6 +26,15 @@ interface Enrollment {
     course?: { level?: { name: string } } | null;
 }
 
+interface Tuition {
+    id: number;
+    student_id: number;
+    amount: string;
+    due_date: string;
+    status: 'pending' | 'partial' | 'paid' | 'overdue';
+    student: { first_name: string; last_name: string };
+}
+
 interface Student {
     id: number;
     first_name: string;
@@ -32,6 +48,7 @@ const router = useRouter();
 const { selectedStudent, setCurrentStudent } = useCurrentStudent();
 
 const students = ref<Student[]>([]);
+const tuitions = ref<Tuition[]>([]);
 const loading = ref(false);
 const error = ref('');
 
@@ -48,23 +65,51 @@ const isSelectedActive = computed(
         ) ?? false,
 );
 
+const pendingTuitions = computed(() =>
+    tuitions.value.filter(
+        (tuition) =>
+            tuition.status === 'pending' ||
+            tuition.status === 'partial' ||
+            tuition.status === 'overdue',
+    ),
+);
+
+const dueSoonTuitions = computed(() =>
+    pendingTuitions.value.filter((tuition) => {
+        const due = new Date(tuition.due_date);
+        const today = new Date();
+        const diff = due.getTime() - today.getTime();
+
+        return diff >= 0 && diff <= 3 * 24 * 60 * 60 * 1000;
+    }),
+);
+
 async function fetchStudents(): Promise<void> {
     loading.value = true;
     error.value = '';
 
     try {
-        const response = await fetch('/api/me/students', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        });
+        const [studentsResponse, tuitionsResponse] = await Promise.all([
+            fetch('/api/me/students', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json',
+                },
+            }),
+            fetch('/api/me/tuitions', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json',
+                },
+            }),
+        ]);
 
-        if (!response.ok) {
-            throw new Error('Error al cargar los estudiantes.');
+        if (!studentsResponse.ok || !tuitionsResponse.ok) {
+            throw new Error('Error al cargar los datos.');
         }
 
-        students.value = await response.json();
+        students.value = await studentsResponse.json();
+        tuitions.value = await tuitionsResponse.json();
 
         if (students.value.length > 0 && !selectedStudent.value) {
             const first = students.value[0];
@@ -130,7 +175,7 @@ onMounted(() => {
                     Portal de Padres
                 </h1>
                 <p class="text-muted-foreground">
-                    Gestiona la información y matrícula de tus hijos.
+                    Gestiona la información, matrícula y pagos de tus hijos.
                 </p>
             </div>
 
@@ -144,6 +189,29 @@ onMounted(() => {
                 No tienes estudiantes registrados. Si completaste una admisión,
                 espera la aprobación.
             </div>
+
+            <Card
+                v-if="dueSoonTuitions.length > 0 && !loading"
+                class="border-destructive/20 bg-destructive/5"
+            >
+                <CardContent class="flex items-start gap-3 py-4">
+                    <AlertCircle class="text-destructive mt-0.5 size-5" />
+                    <div>
+                        <p class="font-medium">Pensiones próximas a vencer</p>
+                        <p class="text-muted-foreground text-sm">
+                            Tienes {{ dueSoonTuitions.length }} obligación(es)
+                            con fecha límite cercana.
+                        </p>
+                        <Button
+                            variant="link"
+                            class="px-0"
+                            @click="router.push('/parent/payments')"
+                        >
+                            Ir a pagos
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <Card
                 v-if="selectedStudent && !loading"
@@ -193,9 +261,22 @@ onMounted(() => {
                             />
                             Ver matrícula
                         </Button>
-                        <Button variant="outline" disabled>
+                        <Button
+                            variant="outline"
+                            @click="router.push('/parent/reports')"
+                        >
                             <BookOpen class="size-4" data-icon="inline-start" />
                             Informes
+                        </Button>
+                        <Button
+                            variant="outline"
+                            @click="router.push('/parent/payments')"
+                        >
+                            <CreditCard
+                                class="size-4"
+                                data-icon="inline-start"
+                            />
+                            Pensiones
                         </Button>
                         <Button variant="outline" disabled>
                             <Users class="size-4" data-icon="inline-start" />

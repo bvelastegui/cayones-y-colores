@@ -106,6 +106,18 @@ const router = createRouter({
             component: () => import('@/pages/Parent/Enroll.vue'),
             meta: { roles: ['representative'] },
         },
+        {
+            path: '/parent/payments',
+            name: 'parent.payments',
+            component: () => import('@/pages/Parent/Payments.vue'),
+            meta: { roles: ['representative'] },
+        },
+        {
+            path: '/parent/reports',
+            name: 'parent.reports',
+            component: () => import('@/pages/Parent/Reports.vue'),
+            meta: { roles: ['representative'] },
+        },
     ],
 });
 

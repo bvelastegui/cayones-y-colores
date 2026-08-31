@@ -4,6 +4,7 @@ import {
     Baby,
     Banknote,
     BookOpen,
+    CreditCard,
     GraduationCap,
     HeartHandshake,
     Layers,
@@ -71,6 +72,16 @@ const mainItems = computed<NavItem[]>(() => {
                     title: 'Mis hijos',
                     url: '/parent',
                     icon: HeartHandshake,
+                },
+                {
+                    title: 'Pensiones',
+                    url: '/parent/payments',
+                    icon: CreditCard,
+                },
+                {
+                    title: 'Informes',
+                    url: '/parent/reports',
+                    icon: BookOpen,
                 },
             ];
         default:

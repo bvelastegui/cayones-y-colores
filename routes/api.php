@@ -32,6 +32,9 @@ Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(
     Route::get('/students', [MeController::class, 'students'])->name('me.students');
     Route::get('/students/{student}/courses', [MeController::class, 'availableCourses'])->name('me.courses');
     Route::post('/enrollments', [MeController::class, 'enroll'])->name('me.enroll');
+    Route::get('/tuitions', [MeController::class, 'tuitions'])->name('me.tuitions');
+    Route::get('/students/{student}/reports', [MeController::class, 'reports'])->name('me.reports');
+    Route::post('/payments/payphone', [MeController::class, 'payWithPayphone'])->name('me.payments.payphone');
 });
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->prefix('teacher')->group(function (): void {
