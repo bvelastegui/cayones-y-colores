@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AcademicReportController;
+use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AdmissionController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
@@ -33,6 +34,7 @@ Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
+    Route::get('/admin/dashboard', AdminDashboardController::class)->name('admin.dashboard');
     Route::apiResource('users', UserController::class);
     Route::apiResource('levels', LevelController::class)->except(['index']);
     Route::apiResource('admissions', AdmissionController::class)->except(['store']);
@@ -45,6 +47,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::apiResource('students', StudentController::class);
     Route::apiResource('enrollments', EnrollmentController::class);
     Route::apiResource('tuitions', TuitionController::class);
+    Route::post('/tuitions/generate', [TuitionController::class, 'generate'])->name('tuitions.generate');
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('academic-reports', AcademicReportController::class);
 });

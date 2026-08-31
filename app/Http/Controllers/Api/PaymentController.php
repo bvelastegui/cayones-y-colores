@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\PaymentMethod;
+use App\Enums\TuitionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Tuition;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,9 +14,9 @@ use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $payments = Payment::with('tuition.student')->paginate(15);
+        $payments = Payment::with('tuition.student')->paginate($request->integer('per_page', 15));
 
         return response()->json($payments);
     }
@@ -30,8 +32,9 @@ class PaymentController extends Controller
         ]);
 
         $payment = Payment::create($data);
+        $this->syncTuitionStatus($payment->tuition);
 
-        return response()->json($payment->load('tuition'), Response::HTTP_CREATED);
+        return response()->json($payment->fresh()->load('tuition.student'), Response::HTTP_CREATED);
     }
 
     public function show(Payment $payment): JsonResponse
@@ -50,14 +53,31 @@ class PaymentController extends Controller
         ]);
 
         $payment->update($data);
+        $this->syncTuitionStatus($payment->tuition);
 
-        return response()->json($payment->load('tuition'));
+        return response()->json($payment->fresh()->load('tuition.student'));
     }
 
     public function destroy(Payment $payment): JsonResponse
     {
+        $tuition = $payment->tuition;
         $payment->delete();
+        $this->syncTuitionStatus($tuition);
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    private function syncTuitionStatus(Tuition $tuition): void
+    {
+        $paid = (float) $tuition->payments()->sum('amount_paid');
+        $balance = (float) $tuition->amount - $paid;
+
+        if ($balance <= 0) {
+            $tuition->update(['status' => TuitionStatus::Paid]);
+        } elseif ($paid > 0) {
+            $tuition->update(['status' => TuitionStatus::Partial]);
+        } else {
+            $tuition->update(['status' => TuitionStatus::Pending]);
+        }
     }
 }

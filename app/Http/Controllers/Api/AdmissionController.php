@@ -12,9 +12,9 @@ use Illuminate\Http\Response;
 
 class AdmissionController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $admissions = Admission::with(['level', 'representative', 'student'])->paginate(15);
+        $admissions = Admission::with(['level', 'representative', 'student'])->paginate($request->integer('per_page', 15));
 
         return response()->json($admissions);
     }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Enums\TuitionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Tuition;
+use App\Services\TuitionService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,9 +14,9 @@ use Illuminate\Validation\Rule;
 
 class TuitionController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $tuitions = Tuition::with(['student', 'payments'])->paginate(15);
+        $tuitions = Tuition::with(['student', 'payments'])->paginate($request->integer('per_page', 15));
 
         return response()->json($tuitions);
     }
@@ -59,5 +61,20 @@ class TuitionController extends Controller
         $tuition->delete();
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    public function generate(Request $request, TuitionService $tuitionService): JsonResponse
+    {
+        $data = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $generationDate = isset($data['date']) ? Carbon::createFromFormat('Y-m-d', $data['date']) : Carbon::today();
+        $created = $tuitionService->generateMonthlyTuitions($generationDate);
+
+        return response()->json([
+            'created' => $created,
+            'date' => $generationDate->toDateString(),
+        ]);
     }
 }

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { LucideIcon } from '@lucide/vue';
-import { BookOpen, HeartHandshake, LayoutDashboard, Users } from '@lucide/vue';
+import {
+    BookOpen,
+    HeartHandshake,
+    LayoutDashboard,
+    Settings,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 
 import NavMain from '@/components/NavMain.vue';
@@ -15,10 +21,17 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/composables/auth';
 
+interface NavSubItem {
+    title: string;
+    url: string;
+}
+
 interface NavItem {
     title: string;
     url: string;
     icon: LucideIcon;
+    isActive?: boolean;
+    items?: NavSubItem[];
 }
 
 const props = defineProps<{
@@ -32,9 +45,33 @@ const navItems = computed<NavItem[]>(() => {
         case 'admin':
             return [
                 {
-                    title: 'Admisiones',
+                    title: 'Panel',
                     url: '/admin',
                     icon: LayoutDashboard,
+                    isActive: true,
+                },
+                {
+                    title: 'Administración',
+                    url: '#',
+                    icon: Settings,
+                    items: [
+                        { title: 'Admisiones', url: '/admin/admissions' },
+                        { title: 'Usuarios', url: '/admin/users' },
+                        { title: 'Niveles', url: '/admin/levels' },
+                        { title: 'Cursos', url: '/admin/courses' },
+                        {
+                            title: 'Representantes',
+                            url: '/admin/representatives',
+                        },
+                        { title: 'Docentes', url: '/admin/teachers' },
+                        { title: 'Estudiantes', url: '/admin/students' },
+                        {
+                            title: 'Asignaciones',
+                            url: '/admin/course-teachers',
+                        },
+                        { title: 'Pensiones', url: '/admin/tuitions' },
+                        { title: 'Pagos', url: '/admin/payments' },
+                    ],
                 },
             ];
         case 'teacher':

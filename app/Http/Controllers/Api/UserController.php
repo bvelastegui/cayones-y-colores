@@ -13,9 +13,9 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $users = User::paginate(15);
+        $users = User::paginate($request->integer('per_page', 15));
 
         return response()->json($users);
     }

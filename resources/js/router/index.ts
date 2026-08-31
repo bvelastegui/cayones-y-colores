@@ -25,7 +25,67 @@ const router = createRouter({
         {
             path: '/admin',
             name: 'admin.dashboard',
+            component: () => import('@/pages/Admin/Dashboard.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/admissions',
+            name: 'admin.admissions',
             component: () => import('@/pages/Admin/Admissions.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/users',
+            name: 'admin.users',
+            component: () => import('@/pages/Admin/Users.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/levels',
+            name: 'admin.levels',
+            component: () => import('@/pages/Admin/Levels.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/courses',
+            name: 'admin.courses',
+            component: () => import('@/pages/Admin/Courses.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/representatives',
+            name: 'admin.representatives',
+            component: () => import('@/pages/Admin/Representatives.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/teachers',
+            name: 'admin.teachers',
+            component: () => import('@/pages/Admin/Teachers.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/students',
+            name: 'admin.students',
+            component: () => import('@/pages/Admin/Students.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/course-teachers',
+            name: 'admin.course-teachers',
+            component: () => import('@/pages/Admin/CourseTeachers.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/tuitions',
+            name: 'admin.tuitions',
+            component: () => import('@/pages/Admin/Tuitions.vue'),
+            meta: { roles: ['admin'] },
+        },
+        {
+            path: '/admin/payments',
+            name: 'admin.payments',
+            component: () => import('@/pages/Admin/Payments.vue'),
             meta: { roles: ['admin'] },
         },
         {

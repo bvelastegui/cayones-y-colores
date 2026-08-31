@@ -10,9 +10,9 @@ use Illuminate\Http\Response;
 
 class RepresentativeController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $representatives = Representative::with('students')->paginate(15);
+        $representatives = Representative::with('students')->paginate($request->integer('per_page', 15));
 
         return response()->json($representatives);
     }

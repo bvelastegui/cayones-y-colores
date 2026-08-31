@@ -10,9 +10,9 @@ use Illuminate\Http\Response;
 
 class LevelController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $levels = Level::with('courses')->paginate(15);
+        $levels = Level::with('courses')->paginate($request->integer('per_page', 15));
 
         return response()->json($levels);
     }
@@ -23,6 +23,8 @@ class LevelController extends Controller
             'name' => ['required', 'string', 'max:100', 'unique:levels'],
             'max_capacity' => ['required', 'integer', 'min:1'],
             'student_aux_ratio' => ['required', 'integer', 'min:0'],
+            'enrollment_fee' => ['required', 'numeric', 'min:0'],
+            'monthly_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $level = Level::create($data);
@@ -41,6 +43,8 @@ class LevelController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:100', 'unique:levels,name,'.$level->id],
             'max_capacity' => ['sometimes', 'required', 'integer', 'min:1'],
             'student_aux_ratio' => ['sometimes', 'required', 'integer', 'min:0'],
+            'enrollment_fee' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'monthly_fee' => ['sometimes', 'required', 'numeric', 'min:0'],
         ]);
 
         $level->update($data);

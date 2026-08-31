@@ -5,6 +5,7 @@ namespace App\Enums;
 enum TuitionStatus: string
 {
     case Pending = 'pending';
+    case Partial = 'partial';
     case Paid = 'paid';
     case Overdue = 'overdue';
 
@@ -15,6 +16,7 @@ enum TuitionStatus: string
     {
         return [
             self::Pending->value => 'Pendiente',
+            self::Partial->value => 'Parcial',
             self::Paid->value => 'Pagada',
             self::Overdue->value => 'Vencida',
         ];

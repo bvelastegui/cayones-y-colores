@@ -12,9 +12,9 @@ use Illuminate\Validation\Rule;
 
 class CourseTeacherController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $assignments = CourseTeacher::with(['course', 'teacher'])->paginate(15);
+        $assignments = CourseTeacher::with(['course', 'teacher'])->paginate($request->integer('per_page', 15));
 
         return response()->json($assignments);
     }

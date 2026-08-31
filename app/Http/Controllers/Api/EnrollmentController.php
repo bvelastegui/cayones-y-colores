@@ -12,9 +12,9 @@ use Illuminate\Validation\Rule;
 
 class EnrollmentController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $enrollments = Enrollment::with(['student', 'course'])->paginate(15);
+        $enrollments = Enrollment::with(['student', 'course'])->paginate($request->integer('per_page', 15));
 
         return response()->json($enrollments);
     }

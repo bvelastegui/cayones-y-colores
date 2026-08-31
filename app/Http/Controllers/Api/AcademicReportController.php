@@ -10,9 +10,9 @@ use Illuminate\Http\Response;
 
 class AcademicReportController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $reports = AcademicReport::with(['student', 'teacher'])->paginate(15);
+        $reports = AcademicReport::with(['student', 'teacher'])->paginate($request->integer('per_page', 15));
 
         return response()->json($reports);
     }
