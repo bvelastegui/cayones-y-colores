@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\AcademicReportRequest;
 use App\Models\AcademicReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,16 +18,9 @@ class AcademicReportController extends Controller
         return response()->json($reports);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AcademicReportRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'student_id' => ['required', 'exists:students,id'],
-            'teacher_id' => ['required', 'exists:teachers,id'],
-            'development_area' => ['required', 'string', 'max:100'],
-            'evaluated_skill' => ['required', 'string', 'max:100'],
-            'achievement_level' => ['required', 'string', 'max:100'],
-            'observations' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $report = AcademicReport::create($data);
 
@@ -38,16 +32,9 @@ class AcademicReportController extends Controller
         return response()->json($academicReport->load(['student', 'teacher']));
     }
 
-    public function update(Request $request, AcademicReport $academicReport): JsonResponse
+    public function update(AcademicReportRequest $request, AcademicReport $academicReport): JsonResponse
     {
-        $data = $request->validate([
-            'student_id' => ['sometimes', 'required', 'exists:students,id'],
-            'teacher_id' => ['sometimes', 'required', 'exists:teachers,id'],
-            'development_area' => ['sometimes', 'required', 'string', 'max:100'],
-            'evaluated_skill' => ['sometimes', 'required', 'string', 'max:100'],
-            'achievement_level' => ['sometimes', 'required', 'string', 'max:100'],
-            'observations' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $academicReport->update($data);
 

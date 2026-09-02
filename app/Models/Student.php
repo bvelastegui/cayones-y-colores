@@ -48,7 +48,7 @@ class Student extends Model
     use HasFactory;
 
     /**
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $appends = ['full_name'];
 
@@ -62,6 +62,7 @@ class Student extends Model
         ];
     }
 
+    /** @return Attribute<string, never> */
     protected function fullName(): Attribute
     {
         return Attribute::make(

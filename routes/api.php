@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\RepresentativeController;
+use App\Http\Controllers\Api\ResetPasswordController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\TeacherDashboardController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/reset-password', ResetPasswordController::class)->name('password.reset');
 Route::get('/vapid-public-key', fn () => response()->json(['public_key' => config('services.webpush.public_key')]))->name('vapid.public-key');
 
 Route::get('/levels', [LevelController::class, 'index'])->name('levels.index');

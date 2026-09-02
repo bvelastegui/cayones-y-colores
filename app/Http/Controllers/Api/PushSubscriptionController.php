@@ -3,19 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\PushSubscriptionRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PushSubscriptionController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(PushSubscriptionRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'endpoint' => ['required', 'url'],
-            'keys.p256dh' => ['required', 'string'],
-            'keys.auth' => ['required', 'string'],
-        ]);
+        $data = $request->validated();
 
         $request->user()->pushSubscriptions()->updateOrCreate(
             ['endpoint' => $data['endpoint']],
@@ -29,11 +25,9 @@ class PushSubscriptionController extends Controller
         return response()->json(['message' => 'Suscripción guardada.'], Response::HTTP_CREATED);
     }
 
-    public function destroy(Request $request): JsonResponse
+    public function destroy(PushSubscriptionRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'endpoint' => ['required', 'url'],
-        ]);
+        $data = $request->validated();
 
         $request->user()->pushSubscriptions()
             ->where('endpoint', $data['endpoint'])

@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\EnrollmentStatus;
+use App\Actions\Teachers\CreateAcademicReportAction;
+use App\Actions\Teachers\ListCourseStudentsAction;
+use App\Actions\Teachers\ListTeacherCoursesAction;
+use App\Actions\Teachers\ListTeacherReportsAction;
 use App\Http\Controllers\Controller;
-use App\Models\AcademicReport;
+use App\Http\Requests\Api\StoreTeacherReportRequest;
 use App\Models\Course;
-use App\Models\CourseTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class TeacherDashboardController extends Controller
 {
-    public function courses(Request $request): JsonResponse
+    public function courses(Request $request, ListTeacherCoursesAction $listCourses): JsonResponse
     {
         $teacher = $request->user()->teacher;
 
@@ -21,42 +24,26 @@ class TeacherDashboardController extends Controller
             return response()->json(['message' => 'Perfil de docente no encontrado.'], Response::HTTP_FORBIDDEN);
         }
 
-        $courses = $teacher->courses()
-            ->with(['level'])
-            ->withCount([
-                'enrollments as active_students_count' => function ($query): void {
-                    $query->where('status', EnrollmentStatus::Active);
-                },
-            ])
-            ->get();
-
-        return response()->json($courses);
+        return response()->json($listCourses->execute($teacher));
     }
 
-    public function students(Request $request, Course $course): JsonResponse
-    {
+    public function students(
+        Request $request,
+        Course $course,
+        ListCourseStudentsAction $listStudents,
+    ): JsonResponse {
         $teacher = $request->user()->teacher;
 
         if (! $teacher) {
             return response()->json(['message' => 'Perfil de docente no encontrado.'], Response::HTTP_FORBIDDEN);
         }
 
-        $hasCourse = CourseTeacher::where('teacher_id', $teacher->id)
-            ->where('course_id', $course->id)
-            ->exists();
+        Gate::forUser($request->user())->authorize('teach', $course);
 
-        if (! $hasCourse) {
-            return response()->json(['message' => 'No tienes asignado este curso.'], Response::HTTP_FORBIDDEN);
-        }
-
-        $students = $course->students()
-            ->wherePivot('status', EnrollmentStatus::Active)
-            ->get();
-
-        return response()->json($students);
+        return response()->json($listStudents->execute($course));
     }
 
-    public function reports(Request $request): JsonResponse
+    public function reports(Request $request, ListTeacherReportsAction $listReports): JsonResponse
     {
         $teacher = $request->user()->teacher;
 
@@ -64,15 +51,10 @@ class TeacherDashboardController extends Controller
             return response()->json(['message' => 'Perfil de docente no encontrado.'], Response::HTTP_FORBIDDEN);
         }
 
-        $reports = AcademicReport::with('student')
-            ->where('teacher_id', $teacher->id)
-            ->latest()
-            ->paginate($request->integer('per_page', 15));
-
-        return response()->json($reports);
+        return response()->json($listReports->execute($teacher, $request->integer('per_page', 15)));
     }
 
-    public function storeReport(Request $request): JsonResponse
+    public function storeReport(StoreTeacherReportRequest $request, CreateAcademicReportAction $createReport): JsonResponse
     {
         $teacher = $request->user()->teacher;
 
@@ -80,31 +62,11 @@ class TeacherDashboardController extends Controller
             return response()->json(['message' => 'Perfil de docente no encontrado.'], Response::HTTP_FORBIDDEN);
         }
 
-        $data = $request->validate([
-            'student_id' => ['required', 'exists:students,id'],
-            'course_id' => ['required', 'exists:courses,id'],
-            'development_area' => ['required', 'string', 'max:100'],
-            'evaluated_skill' => ['required', 'string', 'max:100'],
-            'achievement_level' => ['required', 'string', 'in:A,EP,I,NE'],
-            'observations' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
-        $hasCourse = CourseTeacher::where('teacher_id', $teacher->id)
-            ->where('course_id', $data['course_id'])
-            ->exists();
-
-        if (! $hasCourse) {
-            return response()->json(['message' => 'No tienes asignado este curso.'], Response::HTTP_FORBIDDEN);
-        }
-
-        $report = AcademicReport::create([
-            'student_id' => $data['student_id'],
-            'teacher_id' => $teacher->id,
-            'development_area' => $data['development_area'],
-            'evaluated_skill' => $data['evaluated_skill'],
-            'achievement_level' => $data['achievement_level'],
-            'observations' => $data['observations'] ?? null,
-        ]);
+        $course = Course::findOrFail($data['course_id']);
+        Gate::forUser($request->user())->authorize('teach', $course);
+        $report = $createReport->execute($teacher, $data);
 
         return response()->json($report->load('student'), Response::HTTP_CREATED);
     }

@@ -23,7 +23,7 @@ class EnsureRole
         }
 
         $allowedRoles = array_map(
-            static fn (string $role): string => UserRole::tryFrom($role)?->value ?? $role,
+            static fn (string $role): string => UserRole::tryFrom($role)->value ?? $role,
             $roles,
         );
 

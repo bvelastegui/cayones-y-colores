@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\TeacherType;
+use App\Actions\Teachers\CreateTeacherAction;
+use App\Actions\Teachers\UpdateTeacherAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\TeacherRequest;
 use App\Models\Teacher;
-use App\Services\UserAccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 
 class TeacherController extends Controller
 {
@@ -20,18 +20,11 @@ class TeacherController extends Controller
         return response()->json($teachers);
     }
 
-    public function store(Request $request, UserAccountService $userAccountService): JsonResponse
+    public function store(TeacherRequest $request, CreateTeacherAction $createTeacher): JsonResponse
     {
-        $data = $request->validate([
-            'id_card' => ['required', 'string', 'max:50', 'unique:teachers'],
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:255', 'unique:teachers', 'unique:users'],
-            'teacher_type' => ['required', 'string', Rule::enum(TeacherType::class)],
-        ]);
+        $data = $request->validated();
 
-        $teacher = Teacher::create($data);
-        $userAccountService->createForTeacher($teacher);
+        $teacher = $createTeacher->execute($data);
 
         return response()->json($teacher->load('user'), Response::HTTP_CREATED);
     }
@@ -41,25 +34,11 @@ class TeacherController extends Controller
         return response()->json($teacher->load(['courses', 'academicReports']));
     }
 
-    public function update(Request $request, Teacher $teacher): JsonResponse
+    public function update(TeacherRequest $request, Teacher $teacher, UpdateTeacherAction $updateTeacher): JsonResponse
     {
-        $data = $request->validate([
-            'id_card' => ['sometimes', 'required', 'string', 'max:50', 'unique:teachers,id_card,'.$teacher->id],
-            'first_name' => ['sometimes', 'required', 'string', 'max:100'],
-            'last_name' => ['sometimes', 'required', 'string', 'max:100'],
-            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:teachers,email,'.$teacher->id],
-            'teacher_type' => ['sometimes', 'required', 'string', Rule::enum(TeacherType::class)],
-        ]);
+        $data = $request->validated();
 
-        $teacher->update($data);
-
-        if ($teacher->user) {
-            $teacher->user->update([
-                'name' => "{$teacher->first_name} {$teacher->last_name}",
-                'email' => $teacher->email,
-                'identification' => $teacher->id_card,
-            ]);
-        }
+        $teacher = $updateTeacher->execute($teacher, $data);
 
         return response()->json($teacher->load('user'));
     }

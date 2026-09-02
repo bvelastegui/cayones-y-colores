@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StudentRequest;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,15 +18,9 @@ class StudentController extends Controller
         return response()->json($students);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StudentRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'representative_id' => ['required', 'exists:representatives,id'],
-            'id_card' => ['required', 'string', 'max:50', 'unique:students'],
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'birth_date' => ['required', 'date'],
-        ]);
+        $data = $request->validated();
 
         $student = Student::create($data);
 
@@ -37,15 +32,9 @@ class StudentController extends Controller
         return response()->json($student->load(['representative', 'enrollments.course', 'tuitions.payments', 'academicReports']));
     }
 
-    public function update(Request $request, Student $student): JsonResponse
+    public function update(StudentRequest $request, Student $student): JsonResponse
     {
-        $data = $request->validate([
-            'representative_id' => ['sometimes', 'required', 'exists:representatives,id'],
-            'id_card' => ['sometimes', 'required', 'string', 'max:50', 'unique:students,id_card,'.$student->id],
-            'first_name' => ['sometimes', 'required', 'string', 'max:100'],
-            'last_name' => ['sometimes', 'required', 'string', 'max:100'],
-            'birth_date' => ['sometimes', 'required', 'date'],
-        ]);
+        $data = $request->validated();
 
         $student->update($data);
 

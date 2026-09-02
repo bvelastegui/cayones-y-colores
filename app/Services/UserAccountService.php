@@ -3,69 +3,56 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
-use App\Mail\AccountCreated;
+use App\Events\UserAccountCreated;
 use App\Models\Representative;
 use App\Models\Teacher;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class UserAccountService
 {
     public function createForRepresentative(Representative $representative): User
     {
-        $password = $this->generatePassword();
-
-        $user = User::create([
-            'name' => "{$representative->first_name} {$representative->last_name}",
-            'email' => $representative->email,
-            'password' => Hash::make($password),
-            'identification' => $representative->id_card,
-            'phone' => $representative->phone,
-            'role' => UserRole::Representative,
-            'is_active' => true,
-        ]);
+        $user = $representative->user ?? User::firstOrCreate(
+            ['email' => $representative->email],
+            [
+                'name' => "{$representative->first_name} {$representative->last_name}",
+                'password' => Str::password(64),
+                'identification' => $representative->id_card,
+                'phone' => $representative->phone,
+                'role' => UserRole::Representative,
+                'is_active' => true,
+            ],
+        );
 
         $representative->update(['user_id' => $user->id]);
 
-        $this->notify($user, $password, 'Representante');
+        if ($user->wasRecentlyCreated) {
+            UserAccountCreated::dispatch($user);
+        }
 
         return $user;
     }
 
     public function createForTeacher(Teacher $teacher): User
     {
-        $password = $this->generatePassword();
-
-        $user = User::create([
-            'name' => "{$teacher->first_name} {$teacher->last_name}",
-            'email' => $teacher->email,
-            'password' => Hash::make($password),
-            'identification' => $teacher->id_card ?? $teacher->id,
-            'role' => UserRole::Teacher,
-            'is_active' => true,
-        ]);
+        $user = $teacher->user ?? User::firstOrCreate(
+            ['email' => $teacher->email],
+            [
+                'name' => "{$teacher->first_name} {$teacher->last_name}",
+                'password' => Str::password(64),
+                'identification' => $teacher->id_card ?? (string) $teacher->id,
+                'role' => UserRole::Teacher,
+                'is_active' => true,
+            ],
+        );
 
         $teacher->update(['user_id' => $user->id]);
 
-        $this->notify($user, $password, 'Docente');
+        if ($user->wasRecentlyCreated) {
+            UserAccountCreated::dispatch($user);
+        }
 
         return $user;
-    }
-
-    private function generatePassword(): string
-    {
-        return Str::password(12, true, true, false, false);
-    }
-
-    private function notify(User $user, string $password, string $roleLabel): void
-    {
-        Mail::to($user->email)->send(new AccountCreated(
-            $user->name,
-            $user->email,
-            $password,
-            $roleLabel,
-        ));
     }
 }

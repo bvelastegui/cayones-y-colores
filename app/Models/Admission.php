@@ -76,6 +76,11 @@ class Admission extends Model
         ];
     }
 
+    public function isPending(): bool
+    {
+        return AdmissionStatus::from((string) $this->getRawOriginal('status')) === AdmissionStatus::Pending;
+    }
+
     /**
      * @return BelongsTo<Level, $this>
      */

@@ -61,7 +61,7 @@ class Tuition extends Model
      */
     public function remainingBalance(): float
     {
-        $paid = $this->payments()->sum('amount_paid') ?? 0;
+        $paid = $this->payments()->sum('amount_paid');
 
         return (float) $this->amount - (float) $paid;
     }

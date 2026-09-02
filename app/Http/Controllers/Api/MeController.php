@@ -2,23 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\EnrollmentStatus;
-use App\Enums\TuitionStatus;
+use App\Actions\Payments\PayTuitionAction;
+use App\Actions\Representatives\ListAvailableCoursesAction;
+use App\Actions\Representatives\ListOutstandingTuitionsAction;
+use App\Actions\Representatives\ListRepresentativeStudentsAction;
+use App\Actions\Representatives\ListStudentReportsAction;
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
-use App\Models\Admission;
+use App\Http\Requests\Api\EnrollStudentRequest;
+use App\Http\Requests\Api\PayTuitionRequest;
 use App\Models\Course;
 use App\Models\Representative;
 use App\Models\Student;
 use App\Models\Tuition;
 use App\Services\EnrollmentService;
-use App\Services\PayphoneService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class MeController extends Controller
 {
-    public function students(Request $request): JsonResponse
+    public function students(Request $request, ListRepresentativeStudentsAction $listStudents): JsonResponse
     {
         $representative = $this->representative($request);
 
@@ -26,58 +31,34 @@ class MeController extends Controller
             return response()->json([]);
         }
 
-        $students = $representative->students()
-            ->with([
-                'admission.level',
-                'enrollments' => fn ($query) => $query->where('status', EnrollmentStatus::Active)->limit(1),
-                'enrollments.course.level',
-            ])
-            ->get();
-
-        return response()->json($students);
+        return response()->json($listStudents->execute($representative));
     }
 
-    public function availableCourses(Request $request, Student $student): JsonResponse
-    {
-        if (! $this->ownsStudent($request, $student)) {
-            return response()->json(['message' => 'No autorizado.'], Response::HTTP_FORBIDDEN);
-        }
+    public function availableCourses(
+        Request $request,
+        Student $student,
+        ListAvailableCoursesAction $listAvailableCourses,
+    ): JsonResponse {
+        Gate::forUser($request->user())->authorize('manage', $student);
 
-        $levelId = Admission::where('student_id', $student->id)->value('level_id');
-
-        $courses = Course::query()
-            ->with('level')
-            ->where('level_id', $levelId)
-            ->withCount([
-                'enrollments as active_count' => function ($query): void {
-                    $query->where('status', EnrollmentStatus::Active);
-                },
-            ])
-            ->get();
-
-        return response()->json($courses);
+        return response()->json($listAvailableCourses->execute($student));
     }
 
-    public function enroll(Request $request, EnrollmentService $enrollmentService): JsonResponse
+    public function enroll(EnrollStudentRequest $request, EnrollmentService $enrollmentService): JsonResponse
     {
-        $data = $request->validate([
-            'student_id' => ['required', 'exists:students,id'],
-            'course_id' => ['required', 'exists:courses,id'],
-        ]);
+        $data = $request->validated();
 
-        $student = Student::findOrFail($data['student_id']);
-        $course = Course::findOrFail($data['course_id']);
+        $student = Student::query()->findOrFail($request->integer('student_id'));
+        $course = Course::query()->findOrFail($request->integer('course_id'));
 
-        if (! $this->ownsStudent($request, $student)) {
-            return response()->json(['message' => 'No autorizado.'], Response::HTTP_FORBIDDEN);
-        }
+        Gate::forUser($request->user())->authorize('manage', $student);
 
         $enrollment = $enrollmentService->enroll($student, $course, $request->user());
 
         return response()->json($enrollment, Response::HTTP_CREATED);
     }
 
-    public function tuitions(Request $request): JsonResponse
+    public function tuitions(Request $request, ListOutstandingTuitionsAction $listTuitions): JsonResponse
     {
         $representative = $this->representative($request);
 
@@ -85,48 +66,28 @@ class MeController extends Controller
             return response()->json([]);
         }
 
-        $studentIds = $representative->students()->pluck('id');
-
-        $tuitions = Tuition::with(['student', 'payments'])
-            ->whereIn('student_id', $studentIds)
-            ->whereIn('status', [TuitionStatus::Pending, TuitionStatus::Partial, TuitionStatus::Overdue])
-            ->orderBy('due_date')
-            ->get();
-
-        return response()->json($tuitions);
+        return response()->json($listTuitions->execute($representative));
     }
 
-    public function reports(Request $request, Student $student): JsonResponse
-    {
-        if (! $this->ownsStudent($request, $student)) {
-            return response()->json(['message' => 'No autorizado.'], Response::HTTP_FORBIDDEN);
-        }
+    public function reports(
+        Request $request,
+        Student $student,
+        ListStudentReportsAction $listReports,
+    ): JsonResponse {
+        Gate::forUser($request->user())->authorize('manage', $student);
 
-        $reports = $student->academicReports()
-            ->with('teacher')
-            ->latest()
-            ->get();
-
-        return response()->json($reports);
+        return response()->json($listReports->execute($student));
     }
 
-    public function payWithPayphone(Request $request, PayphoneService $payphoneService): JsonResponse
+    public function payWithPayphone(PayTuitionRequest $request, PayTuitionAction $payTuition): JsonResponse
     {
-        $data = $request->validate([
-            'tuition_id' => ['required', 'exists:tuitions,id'],
-        ]);
+        $data = $request->validated();
 
-        $tuition = Tuition::findOrFail($data['tuition_id']);
+        $tuition = Tuition::query()->findOrFail($request->integer('tuition_id'));
 
-        if (! $this->ownsStudent($request, $tuition->student)) {
-            return response()->json(['message' => 'No autorizado.'], Response::HTTP_FORBIDDEN);
-        }
+        Gate::forUser($request->user())->authorize('manage', $tuition->student);
 
-        if ($tuition->status === TuitionStatus::Paid) {
-            return response()->json(['message' => 'La pensión ya está pagada.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $payment = $payphoneService->payTuition($tuition);
+        $payment = $payTuition->execute($tuition, PaymentMethod::Payphone);
 
         return response()->json([
             'payment' => $payment->load('tuition.student'),
@@ -137,16 +98,5 @@ class MeController extends Controller
     private function representative(Request $request): ?Representative
     {
         return $request->user()->representative;
-    }
-
-    private function ownsStudent(Request $request, Student $student): bool
-    {
-        $representative = $this->representative($request);
-
-        if (! $representative) {
-            return false;
-        }
-
-        return $student->representative_id === $representative->id;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\CourseRequest;
 use App\Models\Course;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,12 +18,9 @@ class CourseController extends Controller
         return response()->json($courses);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(CourseRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'level_id' => ['required', 'exists:levels,id'],
-            'parallel' => ['required', 'string', 'max:10'],
-        ]);
+        $data = $request->validated();
 
         $course = Course::create($data);
 
@@ -34,12 +32,9 @@ class CourseController extends Controller
         return response()->json($course->load(['level', 'teachers', 'enrollments.student', 'students']));
     }
 
-    public function update(Request $request, Course $course): JsonResponse
+    public function update(CourseRequest $request, Course $course): JsonResponse
     {
-        $data = $request->validate([
-            'level_id' => ['sometimes', 'required', 'exists:levels,id'],
-            'parallel' => ['sometimes', 'required', 'string', 'max:10'],
-        ]);
+        $data = $request->validated();
 
         $course->update($data);
 

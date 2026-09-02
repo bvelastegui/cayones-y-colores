@@ -3,19 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\LoginRequest;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function login(Request $request, AuthService $authService): JsonResponse
+    public function login(LoginRequest $request, AuthService $authService): JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'device_name' => ['required', 'string'],
-        ]);
+        $data = $request->validated();
 
         ['user' => $user, 'token' => $token] = $authService->authenticate(
             $data['email'],

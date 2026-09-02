@@ -3,16 +3,13 @@
 
 Se ha creado tu cuenta de {{ $roleLabel }} en **Crayones y Colores**.
 
-Puedes iniciar sesión con las siguientes credenciales:
+La cuenta está asociada al correo **{{ $email }}**.
 
-- **Correo:** {{ $email }}
-- **Contraseña:** {{ $password }}
-
-<x-mail::button :url="url('/login')">
-Iniciar sesión
+<x-mail::button :url="$setupUrl">
+Crear mi contraseña
 </x-mail::button>
 
-Te recomendamos cambiar tu contraseña después del primer ingreso.
+Este enlace vence en 60 minutos. Si ya venció, comunícate con la institución.
 
 Gracias,<br>
 {{ config('app.name') }}

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\EnrollmentRequest;
 use App\Models\Enrollment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 
 class EnrollmentController extends Controller
 {
@@ -19,14 +18,9 @@ class EnrollmentController extends Controller
         return response()->json($enrollments);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(EnrollmentRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'student_id' => ['required', 'exists:students,id'],
-            'course_id' => ['required', 'exists:courses,id'],
-            'enrollment_date' => ['required', 'date'],
-            'status' => ['sometimes', 'required', 'string', Rule::enum(EnrollmentStatus::class)],
-        ]);
+        $data = $request->validated();
 
         $enrollment = Enrollment::create($data);
 
@@ -38,14 +32,9 @@ class EnrollmentController extends Controller
         return response()->json($enrollment->load(['student', 'course']));
     }
 
-    public function update(Request $request, Enrollment $enrollment): JsonResponse
+    public function update(EnrollmentRequest $request, Enrollment $enrollment): JsonResponse
     {
-        $data = $request->validate([
-            'student_id' => ['sometimes', 'required', 'exists:students,id'],
-            'course_id' => ['sometimes', 'required', 'exists:courses,id'],
-            'enrollment_date' => ['sometimes', 'required', 'date'],
-            'status' => ['sometimes', 'required', 'string', Rule::enum(EnrollmentStatus::class)],
-        ]);
+        $data = $request->validated();
 
         $enrollment->update($data);
 

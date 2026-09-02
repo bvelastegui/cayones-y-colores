@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\AssignedRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\CourseTeacherRequest;
 use App\Models\CourseTeacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 
 class CourseTeacherController extends Controller
 {
@@ -19,13 +18,9 @@ class CourseTeacherController extends Controller
         return response()->json($assignments);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(CourseTeacherRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'course_id' => ['required', 'exists:courses,id'],
-            'teacher_id' => ['required', 'exists:teachers,id'],
-            'assigned_role' => ['required', 'string', Rule::enum(AssignedRole::class)],
-        ]);
+        $data = $request->validated();
 
         $assignment = CourseTeacher::create($data);
 
@@ -37,13 +32,9 @@ class CourseTeacherController extends Controller
         return response()->json($courseTeacher->load(['course', 'teacher']));
     }
 
-    public function update(Request $request, CourseTeacher $courseTeacher): JsonResponse
+    public function update(CourseTeacherRequest $request, CourseTeacher $courseTeacher): JsonResponse
     {
-        $data = $request->validate([
-            'course_id' => ['sometimes', 'required', 'exists:courses,id'],
-            'teacher_id' => ['sometimes', 'required', 'exists:teachers,id'],
-            'assigned_role' => ['sometimes', 'required', 'string', Rule::enum(AssignedRole::class)],
-        ]);
+        $data = $request->validated();
 
         $courseTeacher->update($data);
 

@@ -4,17 +4,14 @@ namespace App\Services;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\TuitionStatus;
+use App\Events\MonthlyTuitionsGenerated;
 use App\Models\Enrollment;
 use App\Models\Tuition;
-use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TuitionService
 {
-    public function __construct(private PushNotificationService $pushNotificationService) {}
-
     /**
      * Generate monthly tuitions for all active enrollments.
      *
@@ -33,9 +30,9 @@ class TuitionService
             ->get();
 
         $created = 0;
-        $notifiedUsers = collect();
+        $notifiedUserIds = collect();
 
-        DB::transaction(function () use ($enrollments, $generationDate, $dueDate, &$created, &$notifiedUsers): void {
+        DB::transaction(function () use ($enrollments, $generationDate, $dueDate, &$created, &$notifiedUserIds): void {
             foreach ($enrollments as $enrollment) {
                 $alreadyExists = Tuition::where('student_id', $enrollment->student_id)
                     ->whereYear('generation_date', $generationDate->year)
@@ -59,30 +56,15 @@ class TuitionService
                 $user = $enrollment->student->representative?->user;
 
                 if ($user) {
-                    $notifiedUsers->push($user);
+                    $notifiedUserIds->push($user->id);
                 }
             }
         });
 
-        $this->notifyParents($notifiedUsers->unique('id'));
-
-        return $created;
-    }
-
-    /**
-     * @param  Collection<int, User>  $users
-     */
-    private function notifyParents(Collection $users): void
-    {
-        foreach ($users as $user) {
-            $this->pushNotificationService->sendToUser(
-                $user,
-                'Nueva pensión generada',
-                'Se generó una nueva pensión mensual. Ingresa al portal para revisar los detalles.',
-                ['url' => '/parent/payments'],
-            );
+        if ($notifiedUserIds->isNotEmpty()) {
+            MonthlyTuitionsGenerated::dispatch($notifiedUserIds->unique()->values()->all());
         }
 
-        $this->pushNotificationService->flush();
+        return $created;
     }
 }

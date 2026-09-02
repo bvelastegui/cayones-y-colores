@@ -3,21 +3,20 @@
 namespace App\Services;
 
 use App\Enums\AdmissionStatus;
-use App\Enums\UserRole;
 use App\Models\Admission;
 use App\Models\Representative;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AdmissionService
 {
+    public function __construct(private UserAccountService $userAccountService) {}
+
     public function approve(Admission $admission): Admission
     {
-        if ($admission->status !== AdmissionStatus::Pending) {
+        if (! $admission->isPending()) {
             throw ValidationException::withMessages([
                 'status' => 'La admisión ya fue procesada.',
             ]);
@@ -34,17 +33,7 @@ class AdmissionService
                 ]
             );
 
-            $user = User::firstOrCreate(
-                ['email' => $representative->email],
-                [
-                    'name' => "{$representative->first_name} {$representative->last_name}",
-                    'identification' => $representative->id_card,
-                    'role' => UserRole::Representative->value,
-                    'password' => Hash::make('password'),
-                ]
-            );
-
-            $representative->update(['user_id' => $user->id]);
+            $this->userAccountService->createForRepresentative($representative);
 
             $student = Student::create([
                 'representative_id' => $representative->id,
@@ -66,7 +55,7 @@ class AdmissionService
 
     public function reject(Admission $admission): Admission
     {
-        if ($admission->status !== AdmissionStatus::Pending) {
+        if (! $admission->isPending()) {
             throw ValidationException::withMessages([
                 'status' => 'La admisión ya fue procesada.',
             ]);

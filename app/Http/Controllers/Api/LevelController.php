@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\LevelRequest;
 use App\Models\Level;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,15 +18,9 @@ class LevelController extends Controller
         return response()->json($levels);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(LevelRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:levels'],
-            'max_capacity' => ['required', 'integer', 'min:1'],
-            'student_aux_ratio' => ['required', 'integer', 'min:0'],
-            'enrollment_fee' => ['required', 'numeric', 'min:0'],
-            'monthly_fee' => ['required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validated();
 
         $level = Level::create($data);
 
@@ -37,15 +32,9 @@ class LevelController extends Controller
         return response()->json($level->load(['courses', 'admissions']));
     }
 
-    public function update(Request $request, Level $level): JsonResponse
+    public function update(LevelRequest $request, Level $level): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:100', 'unique:levels,name,'.$level->id],
-            'max_capacity' => ['sometimes', 'required', 'integer', 'min:1'],
-            'student_aux_ratio' => ['sometimes', 'required', 'integer', 'min:0'],
-            'enrollment_fee' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'monthly_fee' => ['sometimes', 'required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validated();
 
         $level->update($data);
 

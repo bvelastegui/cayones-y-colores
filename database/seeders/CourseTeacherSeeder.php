@@ -35,7 +35,7 @@ class CourseTeacherSeeder extends Seeder
             ]);
 
             $auxiliaryCount = fake()->numberBetween(0, 2);
-            $auxiliaries = $teachers->except($principal->id)->random(min($auxiliaryCount, $teachers->count() - 1));
+            $auxiliaries = $teachers->except([$principal->id])->random(min($auxiliaryCount, $teachers->count() - 1));
 
             foreach ($auxiliaries as $auxiliary) {
                 CourseTeacher::factory()->create([

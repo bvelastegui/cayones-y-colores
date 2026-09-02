@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -20,18 +19,9 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(UserRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8'],
-            'identification' => ['required', 'string', 'max:50', 'unique:users'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'role' => ['required', 'string', Rule::enum(UserRole::class)],
-            'is_active' => ['boolean'],
-        ]);
+        $data = $request->validated();
 
         $data['password'] = Hash::make($data['password']);
 
@@ -45,18 +35,9 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(UserRequest $request, User $user): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'password' => ['sometimes', 'required', 'string', 'min:8'],
-            'identification' => ['sometimes', 'required', 'string', 'max:50', 'unique:users,identification,'.$user->id],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'role' => ['sometimes', 'required', 'string', Rule::enum(UserRole::class)],
-            'is_active' => ['boolean'],
-        ]);
+        $data = $request->validated();
 
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
