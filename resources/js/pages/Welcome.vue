@@ -8,11 +8,11 @@ import PublicLayout from '@/layouts/PublicLayout.vue';
 </script>
 
 <template>
-    <PublicLayout>
-        <LandingHero />
-        <LandingValues />
-        <LandingPrograms />
-        <LandingFamily />
-        <LandingCta />
-    </PublicLayout>
+  <PublicLayout>
+    <LandingHero />
+    <LandingValues />
+    <LandingPrograms />
+    <LandingFamily />
+    <LandingCta />
+  </PublicLayout>
 </template>

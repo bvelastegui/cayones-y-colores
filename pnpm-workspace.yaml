@@ -1,8 +1,8 @@
 packages:
-    - '.'
+  - '.'
 
 allowBuilds:
-    vue-demi: true
+  vue-demi: true
 
 publicHoistPattern:
-    - '@inertiajs/core'
+  - '@inertiajs/core'
