@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LevelController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\RepresentativeController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\TeacherController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::get('/vapid-public-key', fn () => response()->json(['public_key' => config('services.webpush.public_key')]))->name('vapid.public-key');
 
 Route::get('/levels', [LevelController::class, 'index'])->name('levels.index');
 Route::post('/admissions', [AdmissionController::class, 'store'])->name('admissions.store');
@@ -26,6 +28,8 @@ Route::post('/admissions', [AdmissionController::class, 'store'])->name('admissi
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/user', [AuthController::class, 'user'])->name('user');
+    Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
 });
 
 Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(function (): void {

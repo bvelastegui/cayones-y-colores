@@ -61,14 +61,22 @@ interface Pagination {
     last_page: number;
 }
 
-const props = defineProps<{
-    title: string;
-    description?: string;
-    endpoint: string;
-    columns: Column[];
-    fields: Field[];
-    icon?: LucideIcon;
-}>();
+const props = withDefaults(
+    defineProps<{
+        title: string;
+        description?: string;
+        endpoint: string;
+        columns: Column[];
+        fields: Field[];
+        icon?: LucideIcon;
+        showCreateButton?: boolean;
+        showDefaultActions?: boolean;
+    }>(),
+    {
+        showCreateButton: true,
+        showDefaultActions: true,
+    },
+);
 
 const token = localStorage.getItem('token') ?? '';
 
@@ -291,6 +299,8 @@ watch(
     },
     { immediate: true },
 );
+
+defineExpose({ fetchPage });
 </script>
 
 <template>
@@ -311,7 +321,7 @@ watch(
             </div>
 
             <Dialog v-model:open="dialogOpen">
-                <DialogTrigger as-child>
+                <DialogTrigger v-if="showCreateButton" as-child>
                     <Button @click="openCreate">
                         <Plus class="size-4" data-icon="inline-start" />
                         Nuevo
@@ -380,65 +390,61 @@ watch(
 
         <p v-if="error" class="text-destructive text-sm">{{ error }}</p>
 
-        <Card>
-            <CardContent class="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead
-                                v-for="column in columns"
-                                :key="column.key"
-                            >
-                                {{ column.label }}
-                            </TableHead>
-                            <TableHead class="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-if="loading">
-                            <TableCell
-                                :colspan="columns.length + 1"
-                                class="text-center"
-                            >
-                                Cargando...
-                            </TableCell>
-                        </TableRow>
-                        <TableRow v-else-if="rows.length === 0">
-                            <TableCell
-                                :colspan="columns.length + 1"
-                                class="text-muted-foreground text-center"
-                            >
-                                No hay registros.
-                            </TableCell>
-                        </TableRow>
-                        <TableRow v-for="row in rows" :key="String(row.id)">
-                            <TableCell
-                                v-for="column in columns"
-                                :key="column.key"
-                            >
-                                {{ getCellValue(row, column.key) }}
-                            </TableCell>
-                            <TableCell class="text-right">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    @click="openEdit(row)"
-                                >
-                                    <Pencil class="size-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    @click="destroy(row)"
-                                >
-                                    <Trash2 class="size-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+        <div class="overflow-hidden rounded-lg border">
+            <Table>
+                <TableHeader class="bg-muted sticky top-0 z-10">
+                    <TableRow>
+                        <TableHead v-for="column in columns" :key="column.key">
+                            {{ column.label }}
+                        </TableHead>
+                        <TableHead class="text-right">Acciones</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow v-if="loading">
+                        <TableCell
+                            :colspan="columns.length + 1"
+                            class="text-center"
+                        >
+                            Cargando...
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-else-if="rows.length === 0">
+                        <TableCell
+                            :colspan="columns.length + 1"
+                            class="text-muted-foreground text-center"
+                        >
+                            No hay registros.
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-for="row in rows" :key="String(row.id)">
+                        <TableCell v-for="column in columns" :key="column.key">
+                            {{ getCellValue(row, column.key) }}
+                        </TableCell>
+                        <TableCell class="text-right">
+                            <slot name="actions" :row="row">
+                                <template v-if="showDefaultActions">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        @click="openEdit(row)"
+                                    >
+                                        <Pencil class="size-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        @click="destroy(row)"
+                                    >
+                                        <Trash2 class="size-4" />
+                                    </Button>
+                                </template>
+                            </slot>
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
 
         <div class="flex items-center justify-between">
             <p class="text-muted-foreground text-sm">

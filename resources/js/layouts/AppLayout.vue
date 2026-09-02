@@ -3,8 +3,10 @@ import AppSidebar from '@/components/AppSidebar.vue';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -12,6 +14,14 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+const currentLabel = computed(
+    () => (route.meta.title as string | undefined) ?? 'Panel',
+);
 </script>
 
 <template>
@@ -30,10 +40,15 @@ import {
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem class="hidden md:block">
-                                Crayones y Colores
+                                <BreadcrumbLink as-child>
+                                    <RouterLink to="/">
+                                        Crayones y Colores
+                                    </RouterLink>
+                                </BreadcrumbLink>
                             </BreadcrumbItem>
+                            <BreadcrumbSeparator class="hidden md:block" />
                             <BreadcrumbItem>
-                                <BreadcrumbPage>Panel</BreadcrumbPage>
+                                <BreadcrumbPage>{{ currentLabel }}</BreadcrumbPage>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>

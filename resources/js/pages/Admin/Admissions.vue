@@ -1,23 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { FileText } from '@lucide/vue';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import AdminCrudView, { type Column } from '@/components/AdminCrudView.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 
 interface Admission {
     id: number;
@@ -31,70 +18,31 @@ interface Admission {
     level: { name: string } | null;
 }
 
-const admissions = ref<Admission[]>([]);
-const loading = ref(false);
-const error = ref('');
+const crudView = ref<InstanceType<typeof AdminCrudView> | null>(null);
 
 const token = localStorage.getItem('token') ?? '';
 
-async function fetchAdmissions(): Promise<void> {
-    loading.value = true;
-    error.value = '';
-
-    try {
-        const response = await fetch('/api/admissions', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al cargar las admisiones.');
-        }
-
-        const data = await response.json();
-        admissions.value = data.data ?? [];
-    } catch (exception) {
-        error.value =
-            exception instanceof Error
-                ? exception.message
-                : 'Error desconocido.';
-    } finally {
-        loading.value = false;
-    }
-}
-
-async function updateStatus(
-    admission: Admission,
-    action: 'approve' | 'reject',
-): Promise<void> {
-    try {
-        const response = await fetch(
-            `/api/admissions/${admission.id}/${action}`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json',
-                },
-            },
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                `No se pudo ${action === 'approve' ? 'aprobar' : 'rechazar'} la admisión.`,
-            );
-        }
-
-        await fetchAdmissions();
-    } catch (exception) {
-        error.value =
-            exception instanceof Error
-                ? exception.message
-                : 'Error desconocido.';
-    }
-}
+const columns: Column[] = [
+    {
+        key: 'applicant',
+        label: 'Aspirante',
+        formatter: (row) =>
+            `${row.applicant_first_name as string} ${row.applicant_last_name as string}`,
+    },
+    { key: 'representative_names', label: 'Representante' },
+    {
+        key: 'contact',
+        label: 'Contacto',
+        formatter: (row) => `${row.contact_email as string}`,
+    },
+    { key: 'level.name', label: 'Nivel' },
+    { key: 'application_date', label: 'Fecha' },
+    {
+        key: 'status',
+        label: 'Estado',
+        formatter: (row) => statusLabel(row.status as string),
+    },
+];
 
 function statusVariant(
     status: string,
@@ -119,105 +67,75 @@ function statusLabel(status: string): string {
     return labels[status] ?? status;
 }
 
-onMounted(() => {
-    void fetchAdmissions();
-});
+async function updateStatus(
+    admission: Admission,
+    action: 'approve' | 'reject',
+): Promise<void> {
+    try {
+        const response = await fetch(
+            `/api/admissions/${admission.id}/${action}`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json',
+                },
+            },
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `No se pudo ${action === 'approve' ? 'aprobar' : 'rechazar'} la admisión.`,
+            );
+        }
+
+        await crudView.value?.fetchPage();
+    } catch (exception) {
+        alert(
+            exception instanceof Error
+                ? exception.message
+                : 'Error desconocido.',
+        );
+    }
+}
 </script>
 
 <template>
     <AppLayout>
-        <div class="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle class="text-primary"
-                        >Crayones y Colores</CardTitle
-                    >
-                    <CardDescription>Gestión de admisiones</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p v-if="error" class="text-destructive mb-4 text-sm">
-                        {{ error }}
-                    </p>
-                    <p v-if="loading" class="text-muted-foreground text-sm">
-                        Cargando...
-                    </p>
-                    <Table v-else>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Aspirante</TableHead>
-                                <TableHead>Representante</TableHead>
-                                <TableHead>Contacto</TableHead>
-                                <TableHead>Nivel</TableHead>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead class="text-right"
-                                    >Acciones</TableHead
-                                >
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow
-                                v-for="admission in admissions"
-                                :key="admission.id"
-                            >
-                                <TableCell>{{ admission.id }}</TableCell>
-                                <TableCell>
-                                    {{ admission.applicant_first_name }}
-                                    {{ admission.applicant_last_name }}
-                                </TableCell>
-                                <TableCell>{{
-                                    admission.representative_names
-                                }}</TableCell>
-                                <TableCell>
-                                    <div class="text-sm">
-                                        {{ admission.contact_email }}
-                                    </div>
-                                    <div class="text-muted-foreground text-xs">
-                                        {{ admission.contact_phone }}
-                                    </div>
-                                </TableCell>
-                                <TableCell>{{
-                                    admission.level?.name ?? '-'
-                                }}</TableCell>
-                                <TableCell>{{
-                                    admission.application_date
-                                }}</TableCell>
-                                <TableCell>
-                                    <Badge
-                                        :variant="
-                                            statusVariant(admission.status)
-                                        "
-                                    >
-                                        {{ statusLabel(admission.status) }}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell class="flex justify-end gap-2">
-                                    <Button
-                                        v-if="admission.status === 'pending'"
-                                        size="sm"
-                                        @click="
-                                            updateStatus(admission, 'approve')
-                                        "
-                                    >
-                                        Aprobar
-                                    </Button>
-                                    <Button
-                                        v-if="admission.status === 'pending'"
-                                        size="sm"
-                                        variant="outline"
-                                        @click="
-                                            updateStatus(admission, 'reject')
-                                        "
-                                    >
-                                        Rechazar
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
+        <AdminCrudView
+            ref="crudView"
+            title="Admisiones"
+            description="Gestión de solicitudes de admisión."
+            endpoint="/api/admissions"
+            :icon="FileText"
+            :columns="columns"
+            :fields="[]"
+            :show-create-button="false"
+            :show-default-actions="false"
+        >
+            <template #actions="{ row }">
+                <Badge
+                    :variant="statusVariant((row as Admission).status)"
+                    class="mr-2"
+                >
+                    {{ statusLabel((row as Admission).status) }}
+                </Badge>
+                <Button
+                    v-if="(row as Admission).status === 'pending'"
+                    size="sm"
+                    @click="updateStatus(row as Admission, 'approve')"
+                >
+                    Aprobar
+                </Button>
+                <Button
+                    v-if="(row as Admission).status === 'pending'"
+                    size="sm"
+                    variant="outline"
+                    @click="updateStatus(row as Admission, 'reject')"
+                >
+                    Rechazar
+                </Button>
+            </template>
+        </AdminCrudView>
     </AppLayout>
 </template>

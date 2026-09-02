@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
     AlertCircle,
+    Bell,
+    BellOff,
     BookOpen,
     CreditCard,
     GraduationCap,
@@ -20,6 +22,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useCurrentStudent } from '@/composables/currentStudent';
+import { usePushNotifications } from '@/composables/pushNotifications';
 
 interface Enrollment {
     status: string;
@@ -46,6 +49,7 @@ interface Student {
 
 const router = useRouter();
 const { selectedStudent, setCurrentStudent } = useCurrentStudent();
+const push = usePushNotifications();
 
 const students = ref<Student[]>([]);
 const tuitions = ref<Tuition[]>([]);
@@ -164,21 +168,37 @@ function enrollSelected(): void {
 
 onMounted(() => {
     void fetchStudents();
+    void push.checkSubscription();
 });
 </script>
 
 <template>
     <AppLayout>
         <div class="space-y-6">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">
-                    Portal de Padres
-                </h1>
-                <p class="text-muted-foreground">
-                    Gestiona la información, matrícula y pagos de tus hijos.
-                </p>
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">
+                        Portal de Padres
+                    </h1>
+                    <p class="text-muted-foreground">
+                        Gestiona la información, matrícula y pagos de tus hijos.
+                    </p>
+                </div>
+
+                <Button
+                    v-if="push.isSupported"
+                    variant="outline"
+                    size="sm"
+                    :disabled="push.loading.value"
+                    @click="push.subscribed.value ? push.unsubscribe() : push.subscribe()"
+                >
+                    <BellOff v-if="push.subscribed.value" class="mr-2 size-4" />
+                    <Bell v-else class="mr-2 size-4" />
+                    {{ push.subscribed.value ? 'Desactivar notificaciones' : 'Activar notificaciones' }}
+                </Button>
             </div>
 
+            <p v-if="push.error.value" class="text-destructive text-sm">{{ push.error.value }}</p>
             <p v-if="error" class="text-destructive text-sm">{{ error }}</p>
             <p v-if="loading" class="text-muted-foreground">Cargando...</p>
 

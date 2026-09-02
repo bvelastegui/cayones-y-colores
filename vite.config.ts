@@ -4,6 +4,7 @@ import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, lazyPlugins } from 'vite-plus';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
     resolve: {
@@ -28,6 +29,36 @@ export default defineConfig({
                     base: null,
                     includeAbsolute: false,
                 },
+            },
+        }),
+        VitePWA({
+            registerType: 'autoUpdate',
+            strategies: 'injectManifest',
+            srcDir: 'resources/js',
+            filename: 'sw.ts',
+            base: '/',
+            scope: '/',
+            buildBase: '/build/',
+            manifest: {
+                name: 'Crayones y Colores - SGA',
+                short_name: 'Crayones y Colores',
+                description: 'Sistema de Gestión Académica para el centro infantil Crayones y Colores.',
+                theme_color: '#f97316',
+                background_color: '#ffffff',
+                display: 'standalone',
+                scope: '/',
+                start_url: '/',
+                icons: [
+                    {
+                        src: '/icon.svg',
+                        sizes: 'any',
+                        type: 'image/svg+xml',
+                        purpose: 'any maskable',
+                    },
+                ],
+            },
+            injectManifest: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
             },
         }),
     ]),

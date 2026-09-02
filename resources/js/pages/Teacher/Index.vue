@@ -235,7 +235,9 @@ async function submitReport(): Promise<void> {
     }
 }
 
-function levelBadge(level: string): 'default' | 'secondary' | 'outline' | 'destructive' {
+function levelBadge(
+    level: string,
+): 'default' | 'secondary' | 'outline' | 'destructive' {
     switch (level) {
         case 'A':
             return 'default';
