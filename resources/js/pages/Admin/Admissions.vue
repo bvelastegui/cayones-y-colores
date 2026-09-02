@@ -6,7 +6,7 @@ import AdminCrudView, { type Column } from '@/components/AdminCrudView.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-interface Admission {
+interface Admission extends Record<string, unknown> {
   id: number;
   applicant_first_name: string;
   applicant_last_name: string;
