@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Palette, ShieldCheck, Sparkles, Users } from '@lucide/vue';
+import { BookOpen, HeartHandshake, ShieldCheck } from '@lucide/vue';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import PublicLayout from '@/layouts/PublicLayout.vue';
+import { RouterLink, useRouter } from 'vue-router';
+import SectionLabel from '@/components/landing/atoms/SectionLabel.vue';
+import PublicPageBenefit from '@/components/landing/molecules/PublicPageBenefit.vue';
 import { useAuth } from '@/composables/auth';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import {
     Field,
+    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
@@ -29,6 +32,27 @@ const email = ref('');
 const password = ref('');
 const error = ref('');
 const loading = ref(false);
+
+const benefits = [
+    {
+        icon: HeartHandshake,
+        title: 'Familias más cerca',
+        description:
+            'Consulta matrículas, pensiones e informes desde un solo lugar.',
+    },
+    {
+        icon: BookOpen,
+        title: 'Aprendizaje acompañado',
+        description:
+            'Sigue los avances académicos y la información importante.',
+    },
+    {
+        icon: ShieldCheck,
+        title: 'Información protegida',
+        description:
+            'Cada perfil accede únicamente a las funciones que necesita.',
+    },
+];
 
 async function submit(): Promise<void> {
     loading.value = true;
@@ -76,138 +100,114 @@ async function submit(): Promise<void> {
 
 <template>
     <PublicLayout>
-        <div class="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+        <section class="relative overflow-hidden" aria-labelledby="login-title">
             <div
-                class="absolute inset-x-0 top-0 -z-10 flex justify-center gap-4 opacity-15"
-            >
-                <div class="bg-secondary size-40 rounded-full blur-3xl" />
-                <div class="bg-accent size-40 rounded-full blur-3xl" />
-                <div class="bg-primary size-40 rounded-full blur-3xl" />
-            </div>
+                class="bg-primary/10 absolute top-20 -left-24 size-80 rounded-full blur-3xl"
+                aria-hidden="true"
+            />
+            <div
+                class="bg-sun/20 absolute top-1/3 -right-24 size-72 rounded-full blur-3xl"
+                aria-hidden="true"
+            />
 
-            <div class="grid items-center gap-10 lg:grid-cols-2">
-                <div class="space-y-6">
-                    <div>
+            <div
+                class="mx-auto grid max-w-7xl items-center gap-12 px-5 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:px-10 lg:py-20"
+            >
+                <aside
+                    class="flex flex-col gap-9 lg:sticky lg:top-28 lg:self-start"
+                >
+                    <div class="flex flex-col gap-5">
+                        <SectionLabel label="Portal institucional" />
                         <h1
-                            class="text-3xl font-extrabold tracking-tight lg:text-4xl"
+                            id="login-title"
+                            class="font-heading text-4xl leading-tight font-bold tracking-tight sm:text-5xl"
                         >
                             Bienvenido de nuevo a
                             <span class="text-primary">Crayones y Colores</span>
                         </h1>
-                        <p class="text-muted-foreground mt-3">
-                            Accede al portal institucional para gestionar
-                            admisiones, matrículas, pagos y el seguimiento
-                            académico de tus hijos.
+                        <p class="text-muted-foreground text-lg leading-8">
+                            Accede a tu espacio para mantenerte al día y
+                            acompañar cada etapa del aprendizaje.
                         </p>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <Card class="border-none shadow-sm">
-                            <CardHeader class="pb-2">
-                                <Users class="text-primary size-6" />
-                                <CardTitle class="text-base"
-                                    >Tres perfiles</CardTitle
-                                >
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    >Padres, docentes y administradores en un
-                                    solo lugar.</CardDescription
-                                >
-                            </CardContent>
-                        </Card>
-                        <Card class="border-none shadow-sm">
-                            <CardHeader class="pb-2">
-                                <ShieldCheck class="text-accent size-6" />
-                                <CardTitle class="text-base"
-                                    >Acceso seguro</CardTitle
-                                >
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    >Tu información está protegida con
-                                    autenticación por roles.</CardDescription
-                                >
-                            </CardContent>
-                        </Card>
-                        <Card class="border-none shadow-sm">
-                            <CardHeader class="pb-2">
-                                <Sparkles class="text-secondary size-6" />
-                                <CardTitle class="text-base"
-                                    >Experiencia integral</CardTitle
-                                >
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    >Desde la admisión hasta el informe de
-                                    avance académico.</CardDescription
-                                >
-                            </CardContent>
-                        </Card>
-                        <Card class="border-none shadow-sm">
-                            <CardHeader class="pb-2">
-                                <Palette class="text-primary size-6" />
-                                <CardTitle class="text-base"
-                                    >Siempre conectado</CardTitle
-                                >
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription
-                                    >Recibe notificaciones de pagos y
-                                    recordatorios importantes.</CardDescription
-                                >
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                    <ul class="flex flex-col gap-5">
+                        <PublicPageBenefit
+                            v-for="benefit in benefits"
+                            :key="benefit.title"
+                            v-bind="benefit"
+                        />
+                    </ul>
+                </aside>
 
-                <Card class="mx-auto w-full max-w-sm shadow-lg">
-                    <CardHeader class="text-center">
-                        <div
-                            class="bg-primary text-primary-foreground mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl"
-                        >
-                            <Palette class="size-7" />
+                <Card
+                    class="border-border/70 shadow-primary/5 w-full shadow-xl lg:justify-self-end"
+                >
+                    <CardHeader class="gap-4">
+                        <SectionLabel label="Acceso seguro" />
+                        <div class="flex flex-col gap-2">
+                            <CardTitle class="font-heading text-2xl">
+                                Iniciar sesión
+                            </CardTitle>
+                            <CardDescription class="text-base leading-6">
+                                Ingresa las credenciales asignadas por la
+                                institución.
+                            </CardDescription>
                         </div>
-                        <CardTitle>Iniciar sesión</CardTitle>
-                        <CardDescription
-                            >Ingresa tus credenciales para
-                            continuar</CardDescription
-                        >
                     </CardHeader>
-                    <form @submit.prevent="submit">
+
+                    <form
+                        :aria-busy="loading"
+                        aria-label="Formulario de inicio de sesión"
+                        @submit.prevent="submit"
+                    >
                         <CardContent>
                             <FieldGroup>
-                                <Field>
-                                    <FieldLabel for="email"
-                                        >Correo electrónico</FieldLabel
-                                    >
+                                <Field :data-invalid="Boolean(error)">
+                                    <FieldLabel for="email">
+                                        Correo electrónico
+                                    </FieldLabel>
                                     <Input
                                         id="email"
                                         v-model="email"
+                                        name="email"
                                         type="email"
-                                        placeholder="admin@cenestur.test"
+                                        autocomplete="email"
+                                        placeholder="tu@correo.com"
+                                        class="min-h-11"
+                                        :aria-invalid="Boolean(error)"
                                         required
                                     />
                                 </Field>
-                                <Field>
-                                    <FieldLabel for="password"
-                                        >Contraseña</FieldLabel
-                                    >
+                                <Field :data-invalid="Boolean(error)">
+                                    <FieldLabel for="password">
+                                        Contraseña
+                                    </FieldLabel>
                                     <Input
                                         id="password"
                                         v-model="password"
+                                        name="password"
                                         type="password"
-                                        placeholder="••••••••"
+                                        autocomplete="current-password"
+                                        placeholder="Ingresa tu contraseña"
+                                        class="min-h-11"
+                                        :aria-invalid="Boolean(error)"
                                         required
                                     />
                                 </Field>
                                 <FieldError v-if="error" :errors="[error]" />
+                                <FieldDescription>
+                                    El acceso está disponible para familias,
+                                    docentes y administración.
+                                </FieldDescription>
                             </FieldGroup>
                         </CardContent>
-                        <CardFooter>
+
+                        <CardFooter class="mt-8 flex flex-col gap-4 border-t">
                             <Button
                                 type="submit"
-                                class="w-full"
+                                size="lg"
+                                class="min-h-11 w-full"
                                 :disabled="loading"
                             >
                                 <Spinner
@@ -216,10 +216,21 @@ async function submit(): Promise<void> {
                                 />
                                 {{ loading ? 'Ingresando...' : 'Ingresar' }}
                             </Button>
+                            <p
+                                class="text-muted-foreground w-full text-center text-sm"
+                            >
+                                ¿Aún no formas parte del centro?
+                                <RouterLink
+                                    to="/apply"
+                                    class="text-primary focus-visible:ring-ring rounded-sm font-semibold hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                                >
+                                    Solicita admisión
+                                </RouterLink>
+                            </p>
                         </CardFooter>
                     </form>
                 </Card>
             </div>
-        </div>
+        </section>
     </PublicLayout>
 </template>
