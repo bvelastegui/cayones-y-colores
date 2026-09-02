@@ -23,6 +23,12 @@ const router = createRouter({
       meta: { public: true, guest: true, title: 'Iniciar sesión' },
     },
     {
+      path: '/set-password',
+      name: 'password.set',
+      component: () => import('@/pages/Auth/SetPassword.vue'),
+      meta: { public: true, guest: true, title: 'Crear contraseña' },
+    },
+    {
       path: '/admin',
       name: 'admin.dashboard',
       component: () => import('@/pages/Admin/Dashboard.vue'),
