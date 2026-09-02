@@ -46,6 +46,13 @@
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
 
+    --sun: oklch(0.88 0.16 89);
+    --sun-foreground: oklch(0.27 0.06 69);
+    --coral: oklch(0.78 0.14 30);
+    --coral-foreground: oklch(0.29 0.09 27);
+    --leaf: oklch(0.82 0.11 151);
+    --leaf-foreground: oklch(0.3 0.08 153);
+
     /* Bordes redondeados para un look infantil (1rem) */
     --radius: 0.625rem;
     --chart-1: oklch(0.828 0.111 230.318);
@@ -84,6 +91,12 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+    --sun: oklch(0.76 0.14 86);
+    --sun-foreground: oklch(0.2 0.04 70);
+    --coral: oklch(0.7 0.13 29);
+    --coral-foreground: oklch(0.18 0.06 27);
+    --leaf: oklch(0.7 0.1 151);
+    --leaf-foreground: oklch(0.18 0.05 153);
     --chart-1: oklch(0.828 0.111 230.318);
     --chart-2: oklch(0.685 0.169 237.323);
     --chart-3: oklch(0.588 0.158 241.966);
@@ -101,8 +114,7 @@
 
 /* 3. Inyección del Tema en Tailwind v4 */
 @theme {
-    /* Reemplazamos la fuente sans predeterminada por Nunito */
-    --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
     /* Mapeo de Radios */
     --radius-lg: var(--radius);
@@ -153,8 +165,8 @@
 }
 
 @theme inline {
-    --font-sans: 'Inter Variable', sans-serif;
-    --font-heading: 'Montserrat Variable', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+    --font-heading: 'Montserrat', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -169,6 +181,12 @@
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
+    --color-sun: var(--sun);
+    --color-sun-foreground: var(--sun-foreground);
+    --color-coral: var(--coral);
+    --color-coral-foreground: var(--coral-foreground);
+    --color-leaf: var(--leaf);
+    --color-leaf-foreground: var(--leaf-foreground);
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
