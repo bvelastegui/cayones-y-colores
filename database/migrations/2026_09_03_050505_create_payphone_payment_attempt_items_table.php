@@ -17,13 +17,24 @@ return new class extends Migration
 
             $table->id();
             $table->foreignId('payphone_payment_attempt_id')
-                ->constrained()
+                ->constrained(
+                    table: 'payphone_payment_attempts',
+                    indexName: 'pp_attempt_items_attempt_fk',
+                )
                 ->cascadeOnDelete();
-            $table->foreignId('tuition_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('tuition_id')
+                ->constrained(
+                    table: 'tuitions',
+                    indexName: 'pp_attempt_items_tuition_fk',
+                )
+                ->cascadeOnDelete();
             $table->unsignedBigInteger('amount_in_cents');
             $table->timestamps();
 
-            $table->unique(['payphone_payment_attempt_id', 'tuition_id']);
+            $table->unique(
+                ['payphone_payment_attempt_id', 'tuition_id'],
+                'pp_attempt_items_attempt_tuition_uq',
+            );
         });
 
         DB::table('payphone_payment_attempt_items')->insertUsing(

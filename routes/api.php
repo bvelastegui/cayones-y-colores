@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LevelController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaymentReceiptController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\RepresentativeController;
 use App\Http\Controllers\Api\ResetPasswordController;
@@ -41,6 +42,7 @@ Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(
     Route::get('/tuitions', [MeController::class, 'tuitions'])->name('me.tuitions');
     Route::get('/students/{student}/reports', [MeController::class, 'reports'])->name('me.reports');
     Route::post('/payments/payphone', [MeController::class, 'payWithPayphone'])->name('me.payments.payphone');
+    Route::get('/payments/{payment}/receipt', PaymentReceiptController::class)->name('me.payments.receipt');
 });
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->prefix('teacher')->group(function (): void {

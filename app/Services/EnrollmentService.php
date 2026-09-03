@@ -45,18 +45,21 @@ class EnrollmentService
         }
 
         $enrollment = DB::transaction(function () use ($student, $course): Enrollment {
+            $enrollmentDate = now();
             $enrollment = Enrollment::create([
                 'student_id' => $student->id,
                 'course_id' => $course->id,
-                'enrollment_date' => now(),
+                'enrollment_date' => $enrollmentDate,
                 'status' => EnrollmentStatus::Active,
             ]);
 
-            Tuition::create([
+            Tuition::firstOrCreate([
                 'student_id' => $student->id,
+                'billing_period' => $enrollmentDate->copy()->startOfMonth()->toDateString(),
+            ], [
                 'amount' => $course->level->enrollment_fee,
-                'generation_date' => now(),
-                'due_date' => now()->addDays(10),
+                'generation_date' => $enrollmentDate,
+                'due_date' => $enrollmentDate->copy()->addDays(10),
                 'status' => TuitionStatus::Pending,
             ]);
 

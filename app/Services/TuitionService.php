@@ -19,6 +19,7 @@ class TuitionService
      */
     public function generateMonthlyTuitions(Carbon $generationDate): int
     {
+        $billingPeriod = $generationDate->copy()->startOfMonth();
         $dueDate = $generationDate->copy()->setDay(10);
 
         if ($dueDate->lessThan($generationDate)) {
@@ -32,24 +33,21 @@ class TuitionService
         $created = 0;
         $notifiedUserIds = collect();
 
-        DB::transaction(function () use ($enrollments, $generationDate, $dueDate, &$created, &$notifiedUserIds): void {
+        DB::transaction(function () use ($enrollments, $generationDate, $billingPeriod, $dueDate, &$created, &$notifiedUserIds): void {
             foreach ($enrollments as $enrollment) {
-                $alreadyExists = Tuition::where('student_id', $enrollment->student_id)
-                    ->whereYear('generation_date', $generationDate->year)
-                    ->whereMonth('generation_date', $generationDate->month)
-                    ->exists();
-
-                if ($alreadyExists) {
-                    continue;
-                }
-
-                Tuition::create([
+                $tuition = Tuition::firstOrCreate([
                     'student_id' => $enrollment->student_id,
+                    'billing_period' => $billingPeriod->toDateString(),
+                ], [
                     'amount' => $enrollment->course->level->monthly_fee,
                     'generation_date' => $generationDate->toDateString(),
                     'due_date' => $dueDate->toDateString(),
                     'status' => TuitionStatus::Pending,
                 ]);
+
+                if (! $tuition->wasRecentlyCreated) {
+                    continue;
+                }
 
                 $created++;
 

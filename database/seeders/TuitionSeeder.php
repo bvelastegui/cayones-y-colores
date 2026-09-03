@@ -19,9 +19,19 @@ class TuitionSeeder extends Seeder
         $studentIds = Student::pluck('id')->toArray();
 
         foreach ($studentIds as $studentId) {
-            Tuition::factory()->count(fake()->numberBetween(1, 3))->create([
-                'student_id' => $studentId,
-            ]);
+            $tuitionCount = fake()->numberBetween(1, 3);
+
+            for ($monthsAgo = 0; $monthsAgo < $tuitionCount; $monthsAgo++) {
+                $billingPeriod = now()->startOfMonth()->subMonths($monthsAgo);
+                $generationDate = $billingPeriod->copy()->addDays(fake()->numberBetween(0, 8));
+
+                Tuition::factory()->create([
+                    'student_id' => $studentId,
+                    'generation_date' => $generationDate->toDateString(),
+                    'billing_period' => $billingPeriod->toDateString(),
+                    'due_date' => $billingPeriod->copy()->setDay(10)->toDateString(),
+                ]);
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ class TuitionController extends Controller
     {
         $data = $request->validated();
 
+        $data['billing_period'] = Carbon::parse($data['generation_date'])->startOfMonth()->toDateString();
         $tuition = Tuition::create($data);
 
         return response()->json($tuition->load(['student', 'payments']), Response::HTTP_CREATED);
@@ -38,6 +39,9 @@ class TuitionController extends Controller
     public function update(TuitionRequest $request, Tuition $tuition): JsonResponse
     {
         $data = $request->validated();
+
+        $generationDate = $data['generation_date'] ?? $tuition->generation_date;
+        $data['billing_period'] = Carbon::parse($generationDate)->startOfMonth()->toDateString();
 
         $tuition->update($data);
 

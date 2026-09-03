@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Payments\PayTuitionAction;
 use App\Actions\Representatives\ListAvailableCoursesAction;
-use App\Actions\Representatives\ListOutstandingTuitionsAction;
 use App\Actions\Representatives\ListRepresentativeStudentsAction;
+use App\Actions\Representatives\ListRepresentativeTuitionsAction;
 use App\Actions\Representatives\ListStudentReportsAction;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
@@ -58,7 +58,7 @@ class MeController extends Controller
         return response()->json($enrollment, Response::HTTP_CREATED);
     }
 
-    public function tuitions(Request $request, ListOutstandingTuitionsAction $listTuitions): JsonResponse
+    public function tuitions(Request $request, ListRepresentativeTuitionsAction $listTuitions): JsonResponse
     {
         $representative = $this->representative($request);
 

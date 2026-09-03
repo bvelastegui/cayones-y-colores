@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertCircle, CreditCard } from '@lucide/vue';
+import { AlertCircle, CheckCircle2, CreditCard, Download } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,15 @@ interface Tuition {
   due_date: string;
   status: 'pending' | 'partial' | 'paid' | 'overdue';
   student: { first_name: string; last_name: string };
+  payments: Payment[];
+}
+
+interface Payment {
+  id: number;
+  payment_method: 'cash' | 'credit_card' | 'payphone' | 'transfer';
+  amount_paid: string;
+  payment_date: string;
+  reference_number: string | null;
 }
 
 const token = localStorage.getItem('token') ?? '';
@@ -30,6 +39,7 @@ const { selectedStudent } = useCurrentStudent();
 const tuitions = ref<Tuition[]>([]);
 const loading = ref(false);
 const paying = ref(false);
+const downloadingReceiptId = ref<number | null>(null);
 const selectedTuitionIds = ref<number[]>([]);
 const error = ref('');
 const success = ref('');
@@ -44,8 +54,16 @@ const filteredTuitions = computed(() => {
   );
 });
 
+const payableTuitions = computed(() =>
+  filteredTuitions.value.filter((tuition) => tuition.status !== 'paid'),
+);
+
+const paidTuitions = computed(() =>
+  filteredTuitions.value.filter((tuition) => tuition.status === 'paid'),
+);
+
 const totalPending = computed(() =>
-  filteredTuitions.value.reduce(
+  payableTuitions.value.reduce(
     (sum, tuition) => sum + Number(tuition.remaining_balance),
     0,
   ),
@@ -53,8 +71,8 @@ const totalPending = computed(() =>
 
 const allVisibleSelected = computed(
   () =>
-    filteredTuitions.value.length > 0 &&
-    filteredTuitions.value.every((tuition) =>
+    payableTuitions.value.length > 0 &&
+    payableTuitions.value.every((tuition) =>
       selectedTuitionIds.value.includes(tuition.id),
     ),
 );
@@ -77,7 +95,11 @@ async function fetchTuitions(): Promise<void> {
     }
 
     tuitions.value = await response.json();
-    const availableIds = new Set(tuitions.value.map((tuition) => tuition.id));
+    const availableIds = new Set(
+      tuitions.value
+        .filter((tuition) => tuition.status !== 'paid')
+        .map((tuition) => tuition.id),
+    );
     selectedTuitionIds.value = selectedTuitionIds.value.filter((id) =>
       availableIds.has(id),
     );
@@ -86,6 +108,46 @@ async function fetchTuitions(): Promise<void> {
       exception instanceof Error ? exception.message : 'Error desconocido.';
   } finally {
     loading.value = false;
+  }
+}
+
+async function downloadReceipt(tuition: Tuition): Promise<void> {
+  const payment = tuition.payments[0];
+
+  if (!payment) {
+    error.value = 'La pensión no tiene un pago asociado.';
+
+    return;
+  }
+
+  downloadingReceiptId.value = payment.id;
+  error.value = '';
+
+  try {
+    const response = await fetch(`/api/me/payments/${payment.id}/receipt`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('No se pudo descargar el comprobante de pago.');
+    }
+
+    const receiptUrl = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = receiptUrl;
+    link.download = `comprobante-${payment.reference_number ?? payment.id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(receiptUrl);
+  } catch (exception) {
+    error.value =
+      exception instanceof Error ? exception.message : 'Error desconocido.';
+  } finally {
+    downloadingReceiptId.value = null;
   }
 }
 
@@ -134,7 +196,7 @@ async function pay(): Promise<void> {
 }
 
 function toggleAllVisible(): void {
-  const visibleIds = filteredTuitions.value.map((tuition) => tuition.id);
+  const visibleIds = payableTuitions.value.map((tuition) => tuition.id);
 
   if (allVisibleSelected.value) {
     selectedTuitionIds.value = selectedTuitionIds.value.filter(
@@ -179,8 +241,12 @@ function statusVariant(
   }
 }
 
+function calendarDate(value: string): Date {
+  return new Date(`${value.slice(0, 10)}T00:00:00`);
+}
+
 function isDueSoon(dueDate: string): boolean {
-  const due = new Date(dueDate);
+  const due = calendarDate(dueDate);
   const today = new Date();
   const diff = due.getTime() - today.getTime();
 
@@ -241,7 +307,7 @@ onMounted(async () => {
       </p>
 
       <Card
-        v-if="filteredTuitions.length > 0"
+        v-if="payableTuitions.length > 0"
         class="border-primary/20 bg-primary/5"
       >
         <CardContent
@@ -288,7 +354,7 @@ onMounted(async () => {
       </Card>
 
       <div
-        v-if="!loading && filteredTuitions.length === 0"
+        v-if="!loading && payableTuitions.length === 0"
         class="text-muted-foreground text-center"
       >
         No tienes pensiones pendientes.
@@ -296,7 +362,7 @@ onMounted(async () => {
 
       <div class="grid gap-4 sm:grid-cols-2">
         <Card
-          v-for="tuition in filteredTuitions"
+          v-for="tuition in payableTuitions"
           :key="tuition.id"
           class="border-none shadow-sm"
           :class="
@@ -309,7 +375,7 @@ onMounted(async () => {
                 <CardTitle class="text-base">
                   Pensión
                   {{
-                    new Date(tuition.generation_date).toLocaleDateString(
+                    calendarDate(tuition.generation_date).toLocaleDateString(
                       'es-ES',
                       {
                         month: 'long',
@@ -343,7 +409,7 @@ onMounted(async () => {
               "
             >
               Vence el
-              {{ new Date(tuition.due_date).toLocaleDateString() }}
+              {{ calendarDate(tuition.due_date).toLocaleDateString() }}
               <span v-if="isDueSoon(tuition.due_date)">
                 (próximo a vencer)
               </span>
@@ -365,6 +431,97 @@ onMounted(async () => {
           </CardContent>
         </Card>
       </div>
+
+      <section class="space-y-4 pt-4">
+        <div>
+          <h2 class="flex items-center gap-2 text-lg font-semibold">
+            <CheckCircle2 class="size-5 text-green-600" />
+            Pensiones pagadas
+          </h2>
+          <p class="text-muted-foreground text-sm">
+            Consulta el historial y descarga tus comprobantes de pago.
+          </p>
+        </div>
+
+        <p
+          v-if="!loading && paidTuitions.length === 0"
+          class="text-muted-foreground py-4 text-center"
+        >
+          Aún no tienes pensiones pagadas.
+        </p>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <Card
+            v-for="tuition in paidTuitions"
+            :key="`paid-${tuition.id}`"
+            class="border-green-600/20 shadow-sm"
+          >
+            <CardHeader>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle class="text-base">
+                    Pensión
+                    {{
+                      calendarDate(tuition.generation_date).toLocaleDateString(
+                        'es-ES',
+                        { month: 'long', year: 'numeric' },
+                      )
+                    }}
+                  </CardTitle>
+                  <CardDescription>
+                    {{ tuition.student.first_name }}
+                    {{ tuition.student.last_name }}
+                  </CardDescription>
+                </div>
+                <Badge :variant="statusVariant(tuition.status)">
+                  {{ statusLabel(tuition.status) }}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <div class="space-y-1 text-sm">
+                <p>
+                  Valor:
+                  <span class="font-semibold">
+                    ${{ Number(tuition.amount).toFixed(2) }}
+                  </span>
+                </p>
+                <p
+                  v-if="tuition.payments[0]"
+                  class="text-muted-foreground"
+                >
+                  Pagada el
+                  {{
+                    calendarDate(
+                      tuition.payments[0].payment_date,
+                    ).toLocaleDateString('es-EC')
+                  }}
+                  <span v-if="tuition.payments[0].reference_number">
+                    · {{ tuition.payments[0].reference_number }}
+                  </span>
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                class="w-full"
+                :disabled="
+                  !tuition.payments[0] ||
+                  downloadingReceiptId === tuition.payments[0]?.id
+                "
+                @click="downloadReceipt(tuition)"
+              >
+                <Download class="size-4" />
+                {{
+                  downloadingReceiptId === tuition.payments[0]?.id
+                    ? 'Generando PDF...'
+                    : 'Descargar comprobante PDF'
+                }}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </div>
   </AppLayout>
 </template>
