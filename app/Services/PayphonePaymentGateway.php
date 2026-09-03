@@ -6,7 +6,6 @@ use App\Contracts\Payments\PaymentGateway;
 use App\Data\Payments\GatewayPaymentConfirmation;
 use App\Data\Payments\GatewayPaymentResult;
 use App\Enums\PaymentMethod;
-use App\Models\Tuition;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -20,7 +19,7 @@ class PayphonePaymentGateway implements PaymentGateway
         return PaymentMethod::Payphone;
     }
 
-    public function prepare(Tuition $tuition, string $clientTransactionId, int $amountInCents): GatewayPaymentResult
+    public function prepare(string $reference, string $clientTransactionId, int $amountInCents): GatewayPaymentResult
     {
         $response = $this->request()->post('/Prepare', [
             'amount' => $amountInCents,
@@ -30,7 +29,7 @@ class PayphonePaymentGateway implements PaymentGateway
             'service' => 0,
             'tip' => 0,
             'clientTransactionId' => $clientTransactionId,
-            'reference' => "Pensión #{$tuition->id} de {$tuition->student->full_name}",
+            'reference' => $reference,
             'storeId' => $this->configuration('store_id'),
             'currency' => $this->configuration('currency'),
             'responseUrl' => $this->configuration('confirm_url'),

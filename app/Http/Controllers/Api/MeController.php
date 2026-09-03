@@ -81,13 +81,14 @@ class MeController extends Controller
 
     public function payWithPayphone(PayTuitionRequest $request, PayTuitionAction $payTuition): JsonResponse
     {
-        $request->validated();
+        $tuitionIds = $request->collect('tuition_ids')->map(fn (mixed $id): int => (int) $id);
+        $tuitions = Tuition::query()->whereKey($tuitionIds)->orderBy('id')->get();
 
-        $tuition = Tuition::query()->findOrFail($request->integer('tuition_id'));
+        foreach ($tuitions as $tuition) {
+            Gate::forUser($request->user())->authorize('manage', $tuition->student);
+        }
 
-        Gate::forUser($request->user())->authorize('manage', $tuition->student);
-
-        $paymentPreparation = $payTuition->execute($tuition, PaymentMethod::Payphone);
+        $paymentPreparation = $payTuition->execute($tuitions, PaymentMethod::Payphone);
 
         return response()->json([
             'payment_url' => $paymentPreparation->paymentUrl,

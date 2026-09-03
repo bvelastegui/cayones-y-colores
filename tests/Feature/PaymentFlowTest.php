@@ -11,11 +11,12 @@ use App\Enums\TuitionStatus;
 use App\Models\Payment;
 use App\Models\PayphonePaymentAttempt;
 use App\Models\Tuition;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
-test('payphone prepares the backend calculated outstanding balance without recording a payment', function () {
+test('payphone prepares several backend calculated outstanding balances in one transaction', function () {
     config()->set('services.payphone', [
         'token' => 'test-token',
         'store_id' => 'test-store',
@@ -31,24 +32,37 @@ test('payphone prepares the backend calculated outstanding balance without recor
             'payWithCard' => 'https://pay.payphonetodoesposible.com/Anonymous/Index?paymentId=payment-token',
         ]),
     ]);
-    $tuition = Tuition::factory()->create(['amount' => 125.50, 'status' => TuitionStatus::Partial]);
-    Payment::factory()->create(['tuition_id' => $tuition->id, 'amount_paid' => 25.25]);
+    $firstTuition = Tuition::factory()->create(['amount' => 125.50, 'status' => TuitionStatus::Partial]);
+    $secondTuition = Tuition::factory()->create(['amount' => 80, 'status' => TuitionStatus::Pending]);
+    Payment::factory()->create(['tuition_id' => $firstTuition->id, 'amount_paid' => 25.25]);
 
-    $result = app(PayTuitionAction::class)->execute($tuition, PaymentMethod::Payphone);
+    $result = app(PayTuitionAction::class)->execute(
+        new Collection([$firstTuition, $secondTuition]),
+        PaymentMethod::Payphone,
+    );
 
     expect($result->paymentUrl)->toContain('paymentId=payment-token')
         ->and(Payment::query()->count())->toBe(1)
-        ->and($tuition->refresh()->status)->toBe(TuitionStatus::Partial);
+        ->and($firstTuition->refresh()->status)->toBe(TuitionStatus::Partial)
+        ->and($secondTuition->refresh()->status)->toBe(TuitionStatus::Pending);
     $this->assertDatabaseHas('payphone_payment_attempts', [
-        'tuition_id' => $tuition->id,
-        'amount_in_cents' => 10025,
+        'tuition_id' => $firstTuition->id,
+        'amount_in_cents' => 18025,
         'status' => PayphonePaymentStatus::Prepared->value,
+    ]);
+    $this->assertDatabaseHas('payphone_payment_attempt_items', [
+        'tuition_id' => $firstTuition->id,
+        'amount_in_cents' => 10025,
+    ]);
+    $this->assertDatabaseHas('payphone_payment_attempt_items', [
+        'tuition_id' => $secondTuition->id,
+        'amount_in_cents' => 8000,
     ]);
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://pay.payphonetodoesposible.com/api/button/Prepare'
             && $request->hasHeader('Authorization', 'Bearer test-token')
-            && $request['amount'] === 10025
-            && $request['amountWithoutTax'] === 10025
+            && $request['amount'] === 18025
+            && $request['amountWithoutTax'] === 18025
             && $request['amountWithTax'] === 0
             && $request['tax'] === 0
             && $request['service'] === 0
@@ -65,15 +79,20 @@ test('payphone confirmation records an approved payment and is idempotent', func
         'currency' => 'USD',
         'time_zone' => -5,
     ]);
-    $tuition = Tuition::factory()->create(['amount' => 125.50, 'status' => TuitionStatus::Pending]);
-    $attempt = PayphonePaymentAttempt::factory()->for($tuition)->create([
-        'amount_in_cents' => 12550,
+    $firstTuition = Tuition::factory()->create(['amount' => 125.50, 'status' => TuitionStatus::Pending]);
+    $secondTuition = Tuition::factory()->create(['amount' => 80, 'status' => TuitionStatus::Pending]);
+    $attempt = PayphonePaymentAttempt::factory()->for($firstTuition)->create([
+        'amount_in_cents' => 20550,
         'client_transaction_id' => '123e4567-e89b-12d3-a456-426614174000',
+    ]);
+    $attempt->items()->createMany([
+        ['tuition_id' => $firstTuition->id, 'amount_in_cents' => 12550],
+        ['tuition_id' => $secondTuition->id, 'amount_in_cents' => 8000],
     ]);
     Http::preventStrayRequests();
     Http::fake([
         'https://pay.payphonetodoesposible.com/api/button/V2/Confirm' => Http::response([
-            'amount' => 12550,
+            'amount' => 20550,
             'clientTransactionId' => $attempt->client_transaction_id,
             'statusCode' => 3,
             'transactionStatus' => 'Approved',
@@ -86,12 +105,18 @@ test('payphone confirmation records an approved payment and is idempotent', func
 
     expect($firstResult)->toBeTrue()
         ->and($secondResult)->toBeTrue()
-        ->and(Payment::query()->where('tuition_id', $tuition->id)->count())->toBe(1)
-        ->and($tuition->refresh()->status)->toBe(TuitionStatus::Paid)
+        ->and(Payment::query()->whereIn('tuition_id', [$firstTuition->id, $secondTuition->id])->count())->toBe(2)
+        ->and($firstTuition->refresh()->status)->toBe(TuitionStatus::Paid)
+        ->and($secondTuition->refresh()->status)->toBe(TuitionStatus::Paid)
         ->and($attempt->refresh()->status)->toBe(PayphonePaymentStatus::Approved);
     $this->assertDatabaseHas('payments', [
-        'tuition_id' => $tuition->id,
+        'tuition_id' => $firstTuition->id,
         'amount_paid' => 125.50,
+        'reference_number' => 'PAYPHONE-987654',
+    ]);
+    $this->assertDatabaseHas('payments', [
+        'tuition_id' => $secondTuition->id,
+        'amount_paid' => 80,
         'reference_number' => 'PAYPHONE-987654',
     ]);
     Http::assertSentCount(1);
@@ -110,6 +135,10 @@ test('payphone confirmation rejects an amount different from the backend calcula
     $attempt = PayphonePaymentAttempt::factory()->for($tuition)->create([
         'amount_in_cents' => 12550,
         'client_transaction_id' => '123e4567-e89b-12d3-a456-426614174001',
+    ]);
+    $attempt->items()->create([
+        'tuition_id' => $tuition->id,
+        'amount_in_cents' => 12550,
     ]);
     Http::preventStrayRequests();
     Http::fake([
@@ -166,6 +195,6 @@ test('deleting the last payment restores the pending status', function () {
 test('a paid tuition cannot be charged again', function () {
     $tuition = Tuition::factory()->create(['amount' => 100, 'status' => TuitionStatus::Paid]);
 
-    expect(fn () => app(PayTuitionAction::class)->execute($tuition, PaymentMethod::Payphone))
+    expect(fn () => app(PayTuitionAction::class)->execute(new Collection([$tuition]), PaymentMethod::Payphone))
         ->toThrow(ValidationException::class);
 });

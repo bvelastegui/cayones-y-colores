@@ -17,6 +17,7 @@ interface Tuition {
   id: number;
   student_id: number;
   amount: string;
+  remaining_balance: string;
   generation_date: string;
   due_date: string;
   status: 'pending' | 'partial' | 'paid' | 'overdue';
@@ -28,7 +29,8 @@ const { selectedStudent } = useCurrentStudent();
 
 const tuitions = ref<Tuition[]>([]);
 const loading = ref(false);
-const paying = ref<number | null>(null);
+const paying = ref(false);
+const selectedTuitionIds = ref<number[]>([]);
 const error = ref('');
 const success = ref('');
 
@@ -44,9 +46,17 @@ const filteredTuitions = computed(() => {
 
 const totalPending = computed(() =>
   filteredTuitions.value.reduce(
-    (sum, tuition) => sum + Number(tuition.amount),
+    (sum, tuition) => sum + Number(tuition.remaining_balance),
     0,
   ),
+);
+
+const allVisibleSelected = computed(
+  () =>
+    filteredTuitions.value.length > 0 &&
+    filteredTuitions.value.every((tuition) =>
+      selectedTuitionIds.value.includes(tuition.id),
+    ),
 );
 
 async function fetchTuitions(): Promise<void> {
@@ -67,6 +77,10 @@ async function fetchTuitions(): Promise<void> {
     }
 
     tuitions.value = await response.json();
+    const availableIds = new Set(tuitions.value.map((tuition) => tuition.id));
+    selectedTuitionIds.value = selectedTuitionIds.value.filter((id) =>
+      availableIds.has(id),
+    );
   } catch (exception) {
     error.value =
       exception instanceof Error ? exception.message : 'Error desconocido.';
@@ -75,8 +89,14 @@ async function fetchTuitions(): Promise<void> {
   }
 }
 
-async function pay(tuition: Tuition): Promise<void> {
-  paying.value = tuition.id;
+async function pay(): Promise<void> {
+  if (selectedTuitionIds.value.length === 0) {
+    error.value = 'Selecciona al menos una pensión.';
+
+    return;
+  }
+
+  paying.value = true;
   error.value = '';
   success.value = '';
 
@@ -88,7 +108,7 @@ async function pay(tuition: Tuition): Promise<void> {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ tuition_id: tuition.id }),
+      body: JSON.stringify({ tuition_ids: selectedTuitionIds.value }),
     });
 
     const data = (await response.json()) as {
@@ -109,8 +129,24 @@ async function pay(tuition: Tuition): Promise<void> {
     error.value =
       exception instanceof Error ? exception.message : 'Error desconocido.';
   } finally {
-    paying.value = null;
+    paying.value = false;
   }
+}
+
+function toggleAllVisible(): void {
+  const visibleIds = filteredTuitions.value.map((tuition) => tuition.id);
+
+  if (allVisibleSelected.value) {
+    selectedTuitionIds.value = selectedTuitionIds.value.filter(
+      (id) => !visibleIds.includes(id),
+    );
+
+    return;
+  }
+
+  selectedTuitionIds.value = [
+    ...new Set([...selectedTuitionIds.value, ...visibleIds]),
+  ];
 }
 
 function statusLabel(status: string): string {
@@ -208,12 +244,46 @@ onMounted(async () => {
         v-if="filteredTuitions.length > 0"
         class="border-primary/20 bg-primary/5"
       >
-        <CardContent class="flex items-center gap-3 py-4">
-          <AlertCircle class="text-primary size-5" />
-          <p class="text-sm">
-            Total pendiente:
-            <span class="font-semibold"> ${{ totalPending.toFixed(2) }} </span>
-          </p>
+        <CardContent
+          class="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <AlertCircle class="text-primary size-5" />
+            <div class="text-sm">
+              <p>
+                Total pendiente:
+                <span class="font-semibold">
+                  ${{ totalPending.toFixed(2) }}
+                </span>
+              </p>
+              <p class="text-muted-foreground">
+                {{ selectedTuitionIds.length }}
+                {{ selectedTuitionIds.length === 1 ? 'pensión' : 'pensiones' }}
+                seleccionadas
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              :disabled="paying"
+              @click="toggleAllVisible"
+            >
+              {{
+                allVisibleSelected ? 'Quitar selección' : 'Seleccionar todas'
+              }}
+            </Button>
+            <Button
+              type="button"
+              :disabled="selectedTuitionIds.length === 0 || paying"
+              @click="pay"
+            >
+              {{
+                paying ? 'Preparando pago...' : 'Pagar selección con PayPhone'
+              }}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -229,6 +299,9 @@ onMounted(async () => {
           v-for="tuition in filteredTuitions"
           :key="tuition.id"
           class="border-none shadow-sm"
+          :class="
+            selectedTuitionIds.includes(tuition.id) ? 'ring-primary ring-2' : ''
+          "
         >
           <CardHeader>
             <div class="flex items-start justify-between">
@@ -256,9 +329,9 @@ onMounted(async () => {
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="text-sm">
-              Monto:
+              Saldo pendiente:
               <span class="text-foreground font-semibold">
-                ${{ Number(tuition.amount).toFixed(2) }}
+                ${{ Number(tuition.remaining_balance).toFixed(2) }}
               </span>
             </div>
             <div
@@ -275,15 +348,20 @@ onMounted(async () => {
                 (próximo a vencer)
               </span>
             </div>
-            <Button
-              class="w-full"
-              :disabled="tuition.status === 'paid' || paying === tuition.id"
-              @click="pay(tuition)"
+            <label
+              :for="`tuition-${tuition.id}`"
+              class="border-border hover:bg-muted/50 flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors"
             >
-              <span v-if="paying === tuition.id">Procesando...</span>
-              <span v-else-if="tuition.status === 'paid'">Pagada</span>
-              <span v-else>Pagar con Payphone</span>
-            </Button>
+              <input
+                :id="`tuition-${tuition.id}`"
+                v-model="selectedTuitionIds"
+                type="checkbox"
+                :value="tuition.id"
+                :disabled="paying"
+                class="border-input text-primary focus-visible:ring-ring size-4 rounded focus-visible:ring-2 focus-visible:ring-offset-2"
+              />
+              <span class="text-sm font-medium">Incluir en el pago</span>
+            </label>
           </CardContent>
         </Card>
       </div>

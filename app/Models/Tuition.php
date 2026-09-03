@@ -62,6 +62,12 @@ class Tuition extends Model
         return $this->hasMany(PayphonePaymentAttempt::class);
     }
 
+    /** @return HasMany<PayphonePaymentAttemptItem, $this> */
+    public function payphonePaymentAttemptItems(): HasMany
+    {
+        return $this->hasMany(PayphonePaymentAttemptItem::class);
+    }
+
     /**
      * Remaining balance after payments.
      */

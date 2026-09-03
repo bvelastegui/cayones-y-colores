@@ -10,6 +10,7 @@ use App\Models\PayphonePaymentAttempt;
 use App\Models\Tuition;
 use App\Services\PaymentGatewayResolver;
 use App\Services\TuitionPaymentService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -22,49 +23,86 @@ class PayTuitionAction
         private TuitionPaymentService $tuitionPaymentService,
     ) {}
 
-    public function execute(Tuition $tuition, PaymentMethod $method): GatewayPaymentResult
+    /** @param Collection<int, Tuition> $tuitions */
+    public function execute(Collection $tuitions, PaymentMethod $method): GatewayPaymentResult
     {
-        if ($tuition->status === TuitionStatus::Paid) {
+        if ($tuitions->isEmpty()) {
             throw ValidationException::withMessages([
-                'tuition_id' => ['La pensión ya está pagada.'],
+                'tuition_ids' => ['Selecciona al menos una pensión.'],
             ]);
         }
 
-        $attempt = DB::transaction(function () use ($tuition): PayphonePaymentAttempt {
-            $lockedTuition = Tuition::query()->lockForUpdate()->findOrFail($tuition->id);
-            $amountInCents = $this->tuitionPaymentService->remainingBalanceInCents($lockedTuition);
+        $tuitionIds = $tuitions->modelKeys();
+        sort($tuitionIds);
 
-            if ($amountInCents <= 0) {
+        $attempt = DB::transaction(function () use ($tuitionIds): PayphonePaymentAttempt {
+            $lockedTuitions = Tuition::query()
+                ->whereKey($tuitionIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($lockedTuitions->count() !== count($tuitionIds)) {
                 throw ValidationException::withMessages([
-                    'tuition_id' => ['La pensión no tiene saldo pendiente.'],
+                    'tuition_ids' => ['Una de las pensiones seleccionadas ya no existe.'],
                 ]);
             }
 
             $activeAttempt = PayphonePaymentAttempt::query()
-                ->whereBelongsTo($lockedTuition)
                 ->whereIn('status', [PayphonePaymentStatus::Creating, PayphonePaymentStatus::Prepared])
                 ->where('expires_at', '>', now())
+                ->whereHas('items', fn ($query) => $query->whereIn('tuition_id', $tuitionIds))
+                ->with('items')
                 ->lockForUpdate()
                 ->latest('id')
                 ->first();
 
-            if ($activeAttempt?->status === PayphonePaymentStatus::Creating) {
+            if ($activeAttempt !== null) {
+                $attemptTuitionIds = $activeAttempt->items->pluck('tuition_id')->all();
+                sort($attemptTuitionIds);
+
+                if ($activeAttempt->status === PayphonePaymentStatus::Prepared
+                    && $attemptTuitionIds === $tuitionIds) {
+                    return $activeAttempt;
+                }
+
                 throw ValidationException::withMessages([
-                    'tuition_id' => ['Ya se está preparando un pago para esta pensión.'],
+                    'tuition_ids' => ['Una de las pensiones ya está incluida en otro pago en proceso.'],
                 ]);
             }
 
-            if ($activeAttempt) {
-                return $activeAttempt;
-            }
+            $items = $lockedTuitions->map(function (Tuition $tuition): array {
+                if ($tuition->status === TuitionStatus::Paid) {
+                    throw ValidationException::withMessages([
+                        'tuition_ids' => ['Una de las pensiones seleccionadas ya está pagada.'],
+                    ]);
+                }
 
-            return PayphonePaymentAttempt::create([
-                'tuition_id' => $lockedTuition->id,
+                $amountInCents = $this->tuitionPaymentService->remainingBalanceInCents($tuition);
+
+                if ($amountInCents <= 0) {
+                    throw ValidationException::withMessages([
+                        'tuition_ids' => ['Una de las pensiones seleccionadas no tiene saldo pendiente.'],
+                    ]);
+                }
+
+                return [
+                    'tuition_id' => $tuition->id,
+                    'amount_in_cents' => $amountInCents,
+                ];
+            });
+
+            $attempt = PayphonePaymentAttempt::create([
+                'tuition_id' => $lockedTuitions->firstOrFail()->id,
                 'client_transaction_id' => (string) Str::uuid(),
-                'amount_in_cents' => $amountInCents,
+                'amount_in_cents' => $items->sum('amount_in_cents'),
                 'status' => PayphonePaymentStatus::Creating,
                 'expires_at' => now()->addMinutes(10),
             ]);
+
+            $attempt->items()->createMany($items->all());
+
+            return $attempt;
         });
 
         if ($attempt->status === PayphonePaymentStatus::Prepared
@@ -75,7 +113,7 @@ class PayTuitionAction
 
         try {
             $result = $this->gatewayResolver->resolve($method)->prepare(
-                $attempt->tuition()->with('student')->firstOrFail(),
+                'Pago de '.$attempt->items()->count().' pensiones',
                 $attempt->client_transaction_id,
                 $attempt->amount_in_cents,
             );

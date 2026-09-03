@@ -23,7 +23,8 @@ class PayTuitionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tuition_id' => ['required', 'exists:tuitions,id'],
+            'tuition_ids' => ['required', 'array', 'min:1'],
+            'tuition_ids.*' => ['required', 'integer', 'distinct:strict', 'exists:tuitions,id'],
         ];
     }
 }

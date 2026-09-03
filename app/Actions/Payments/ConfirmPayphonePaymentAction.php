@@ -6,6 +6,8 @@ use App\Enums\PaymentMethod;
 use App\Enums\PayphonePaymentStatus;
 use App\Models\Payment;
 use App\Models\PayphonePaymentAttempt;
+use App\Models\PayphonePaymentAttemptItem;
+use App\Models\Tuition;
 use App\Services\PayphonePaymentGateway;
 use App\Services\TuitionPaymentService;
 use Illuminate\Support\Facades\DB;
@@ -54,23 +56,50 @@ class ConfirmPayphonePaymentAction
                 return true;
             }
 
-            $tuition = $lockedAttempt->tuition()->lockForUpdate()->firstOrFail();
+            $items = PayphonePaymentAttemptItem::query()
+                ->whereBelongsTo($lockedAttempt, 'attempt')
+                ->orderBy('tuition_id')
+                ->lockForUpdate()
+                ->get();
 
-            Payment::create([
-                'tuition_id' => $tuition->id,
-                'payment_method' => PaymentMethod::Payphone,
-                'amount_paid' => $this->tuitionPaymentService->centsToDecimal($lockedAttempt->amount_in_cents),
-                'payment_date' => now()->toDateString(),
-                'reference_number' => "PAYPHONE-{$confirmation->transactionId}",
-            ]);
+            if ($items->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'transaction' => ['El pago preparado no contiene pensiones.'],
+                ]);
+            }
+
+            $tuitions = Tuition::query()
+                ->whereKey($items->pluck('tuition_id'))
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($items as $item) {
+                $tuition = $tuitions->get($item->tuition_id);
+
+                if (! $tuition instanceof Tuition) {
+                    throw ValidationException::withMessages([
+                        'transaction' => ['Una pensión del pago preparado ya no existe.'],
+                    ]);
+                }
+
+                Payment::create([
+                    'tuition_id' => $tuition->id,
+                    'payment_method' => PaymentMethod::Payphone,
+                    'amount_paid' => $this->tuitionPaymentService->centsToDecimal($item->amount_in_cents),
+                    'payment_date' => now()->toDateString(),
+                    'reference_number' => "PAYPHONE-{$confirmation->transactionId}",
+                ]);
+
+                $this->tuitionPaymentService->synchronizeStatus($tuition);
+            }
 
             $lockedAttempt->update([
                 'status' => PayphonePaymentStatus::Approved,
                 'transaction_id' => $confirmation->transactionId,
                 'confirmed_at' => now(),
             ]);
-
-            $this->tuitionPaymentService->synchronizeStatus($tuition);
 
             return true;
         });
