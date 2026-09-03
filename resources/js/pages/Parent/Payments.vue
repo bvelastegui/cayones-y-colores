@@ -91,14 +91,20 @@ async function pay(tuition: Tuition): Promise<void> {
       body: JSON.stringify({ tuition_id: tuition.id }),
     });
 
-    const data = (await response.json()) as { message?: string };
+    const data = (await response.json()) as {
+      message?: string;
+      payment_url?: string;
+    };
 
     if (!response.ok) {
       throw new Error(data.message ?? 'No se pudo procesar el pago.');
     }
 
-    success.value = data.message ?? 'Pago realizado correctamente.';
-    await fetchTuitions();
+    if (!data.payment_url) {
+      throw new Error('PayPhone no devolvió una dirección de pago válida.');
+    }
+
+    window.location.assign(data.payment_url);
   } catch (exception) {
     error.value =
       exception instanceof Error ? exception.message : 'Error desconocido.';
@@ -145,8 +151,24 @@ function isDueSoon(dueDate: string): boolean {
   return diff >= 0 && diff <= 3 * 24 * 60 * 60 * 1000;
 }
 
-onMounted(() => {
-  void fetchTuitions();
+onMounted(async () => {
+  const paymentResult = new URLSearchParams(window.location.search).get(
+    'payment',
+  );
+
+  await fetchTuitions();
+
+  if (paymentResult === 'approved') {
+    success.value = 'Pago confirmado correctamente.';
+  } else if (paymentResult === 'cancelled') {
+    error.value = 'El pago fue cancelado.';
+  } else if (paymentResult === 'error') {
+    error.value = 'No fue posible confirmar el pago con PayPhone.';
+  }
+
+  if (paymentResult) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
 });
 </script>
 

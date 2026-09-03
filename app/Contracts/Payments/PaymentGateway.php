@@ -10,5 +10,5 @@ interface PaymentGateway
 {
     public function method(): PaymentMethod;
 
-    public function pay(Tuition $tuition): GatewayPaymentResult;
+    public function prepare(Tuition $tuition, string $clientTransactionId, int $amountInCents): GatewayPaymentResult;
 }

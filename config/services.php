@@ -41,4 +41,13 @@ return [
         'subject' => env('VAPID_SUBJECT'),
     ],
 
+    'payphone' => [
+        'token' => env('PAYPHONE_TOKEN'),
+        'store_id' => env('PAYPHONE_STORE_ID'),
+        'confirm_url' => env('PAYPHONE_CONFIRM_URL'),
+        'api_url' => env('PAYPHONE_API_URL', 'https://pay.payphonetodoesposible.com/api/button'),
+        'currency' => 'USD',
+        'time_zone' => -5,
+    ],
+
 ];

@@ -81,17 +81,16 @@ class MeController extends Controller
 
     public function payWithPayphone(PayTuitionRequest $request, PayTuitionAction $payTuition): JsonResponse
     {
-        $data = $request->validated();
+        $request->validated();
 
         $tuition = Tuition::query()->findOrFail($request->integer('tuition_id'));
 
         Gate::forUser($request->user())->authorize('manage', $tuition->student);
 
-        $payment = $payTuition->execute($tuition, PaymentMethod::Payphone);
+        $paymentPreparation = $payTuition->execute($tuition, PaymentMethod::Payphone);
 
         return response()->json([
-            'payment' => $payment->load('tuition.student'),
-            'message' => 'Pago procesado exitosamente.',
+            'payment_url' => $paymentPreparation->paymentUrl,
         ]);
     }
 
