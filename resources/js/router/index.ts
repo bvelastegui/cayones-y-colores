@@ -83,6 +83,12 @@ const router = createRouter({
       meta: { roles: ['admin'], title: 'Asignaciones' },
     },
     {
+      path: '/admin/enrollments',
+      name: 'admin.enrollments',
+      component: () => import('@/pages/Admin/Enrollments.vue'),
+      meta: { roles: ['admin'], title: 'Matrículas' },
+    },
+    {
       path: '/admin/tuitions',
       name: 'admin.tuitions',
       component: () => import('@/pages/Admin/Tuitions.vue'),

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('tuitions:generate')->monthlyOn(1, '00:00');
+Schedule::command('enrollments:allocate')->everyMinute()->withoutOverlapping(10);

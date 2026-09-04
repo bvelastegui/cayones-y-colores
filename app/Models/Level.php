@@ -6,6 +6,7 @@ use Database\Factories\LevelFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'max_capacity', 'student_aux_ratio', 'enrollment_fee', 'monthly_fee'])]
+#[Fillable(['name', 'max_capacity', 'student_aux_ratio', 'enrollment_fee', 'monthly_fee', 'sequence_order', 'next_level_id'])]
 class Level extends Model
 {
     /** @use HasFactory<LevelFactory> */
@@ -35,6 +36,7 @@ class Level extends Model
             'student_aux_ratio' => 'integer',
             'enrollment_fee' => 'decimal:2',
             'monthly_fee' => 'decimal:2',
+            'sequence_order' => 'integer',
         ];
     }
 
@@ -52,6 +54,18 @@ class Level extends Model
     public function admissions(): HasMany
     {
         return $this->hasMany(Admission::class);
+    }
+
+    /** @return BelongsTo<Level, $this> */
+    public function nextLevel(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'next_level_id');
+    }
+
+    /** @return HasMany<Student, $this> */
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class);
     }
 
     /**

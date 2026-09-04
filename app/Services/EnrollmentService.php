@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
 use App\Enums\UserRole;
 use App\Models\Course;
@@ -48,17 +49,18 @@ class EnrollmentService
             $enrollmentDate = now();
             $enrollment = Enrollment::create([
                 'student_id' => $student->id,
+                'level_id' => $course->level_id,
                 'course_id' => $course->id,
                 'enrollment_date' => $enrollmentDate,
                 'status' => EnrollmentStatus::Active,
             ]);
 
-            Tuition::firstOrCreate([
+            Tuition::firstOrCreate(['enrollment_id' => $enrollment->id], [
                 'student_id' => $student->id,
-                'billing_period' => $enrollmentDate->copy()->startOfMonth()->toDateString(),
-            ], [
+                'concept' => TuitionConcept::Enrollment,
                 'amount' => $course->level->enrollment_fee,
                 'generation_date' => $enrollmentDate,
+                'billing_period' => null,
                 'due_date' => $enrollmentDate->copy()->addDays(10),
                 'status' => TuitionStatus::Pending,
             ]);

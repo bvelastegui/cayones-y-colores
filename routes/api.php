@@ -39,6 +39,12 @@ Route::middleware(['auth:sanctum', 'role:representative'])->prefix('me')->group(
     Route::get('/students', [MeController::class, 'students'])->name('me.students');
     Route::get('/students/{student}/courses', [MeController::class, 'availableCourses'])->name('me.courses');
     Route::post('/enrollments', [MeController::class, 'enroll'])->name('me.enroll');
+    Route::get('/students/{student}/enrollment', [MeController::class, 'enrollment'])->name('me.enrollment.current');
+    Route::post('/students/{student}/enrollments', [MeController::class, 'startEnrollment'])->name('me.enrollment.start');
+    Route::get('/enrollments/{enrollment}', [MeController::class, 'showEnrollment'])->name('me.enrollment.show');
+    Route::put('/enrollments/{enrollment}/form/{section}', [MeController::class, 'saveEnrollmentSection'])->name('me.enrollment.form.save');
+    Route::post('/enrollments/{enrollment}/complete', [MeController::class, 'completeEnrollment'])->name('me.enrollment.complete');
+    Route::post('/enrollments/{enrollment}/payphone', [MeController::class, 'payEnrollment'])->name('me.enrollment.payphone');
     Route::get('/tuitions', [MeController::class, 'tuitions'])->name('me.tuitions');
     Route::get('/students/{student}/reports', [MeController::class, 'reports'])->name('me.reports');
     Route::post('/payments/payphone', [MeController::class, 'payWithPayphone'])->name('me.payments.payphone');
@@ -65,6 +71,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::apiResource('course-teachers', CourseTeacherController::class);
     Route::apiResource('students', StudentController::class);
     Route::apiResource('enrollments', EnrollmentController::class);
+    Route::put('/enrollments/{enrollment}/assignment', [EnrollmentController::class, 'assign'])->name('enrollments.assignment');
+    Route::put('/enrollments/{enrollment}/outcome', [EnrollmentController::class, 'outcome'])->name('enrollments.outcome');
+    Route::put('/enrollments/{enrollment}/exception', [EnrollmentController::class, 'grantException'])->name('enrollments.exception');
     Route::apiResource('tuitions', TuitionController::class);
     Route::post('/tuitions/generate', [TuitionController::class, 'generate'])->name('tuitions.generate');
     Route::apiResource('payments', PaymentController::class);
