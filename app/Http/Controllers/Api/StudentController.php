@@ -5,15 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StudentRequest;
 use App\Models\Student;
+use App\Services\EnrollmentAuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $students = Student::with(['representative', 'enrollments.course'])->paginate($request->integer('per_page', 15));
+        $students = Student::with(['representative', 'level', 'enrollments.course'])->paginate($request->integer('per_page', 15));
 
         return response()->json($students);
     }
@@ -24,12 +26,18 @@ class StudentController extends Controller
 
         $student = Student::create($data);
 
-        return response()->json($student->load('representative'), Response::HTTP_CREATED);
+        return response()->json($student->load(['representative', 'level']), Response::HTTP_CREATED);
     }
 
-    public function show(Student $student): JsonResponse
+    public function show(Request $request, Student $student, EnrollmentAuditService $auditService): JsonResponse
     {
-        return response()->json($student->load(['representative', 'enrollments.course', 'tuitions.payments', 'academicReports']));
+        $auditService->recordAccess($student, $request->user(), 'admin_full_profile', null, $request->ip());
+
+        return response()->json($student->load([
+            'representative', 'level', 'profile', 'residence', 'legalRepresentative', 'billingProfile',
+            'healthInsurance', 'emergencyContacts', 'medicalConditions', 'allergies', 'medications',
+            'enrollments.course', 'enrollments.form', 'tuitions.payments', 'academicReports',
+        ]));
     }
 
     public function update(StudentRequest $request, Student $student): JsonResponse
@@ -43,6 +51,12 @@ class StudentController extends Controller
 
     public function destroy(Student $student): JsonResponse
     {
+        if ($student->enrollments()->exists()) {
+            throw ValidationException::withMessages([
+                'student' => ['No se puede eliminar un estudiante con historial de matrículas.'],
+            ]);
+        }
+
         $student->delete();
 
         return response()->json(null, Response::HTTP_NO_CONTENT);

@@ -26,6 +26,7 @@ class StudentRequest extends FormRequest
     {
         return [
             'representative_id' => [$this->required(), 'exists:representatives,id'],
+            'level_id' => [$this->required(), 'integer', 'exists:levels,id'],
             'id_card' => [$this->required(), 'string', 'max:50', Rule::unique('students')->ignore($this->student())],
             'first_name' => [$this->required(), 'string', 'max:100'],
             'last_name' => [$this->required(), 'string', 'max:100'],

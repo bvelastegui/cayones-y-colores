@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -84,7 +85,7 @@ test('administrative tuition creation reports a duplicate monthly period', funct
         ->assertJsonValidationErrors('generation_date');
 });
 
-test('enrollment does not create a second tuition in an existing monthly period', function () {
+test('an enrollment charge can coexist with the monthly pension for the same month', function () {
     $this->travelTo(Carbon::parse('2026-09-20'));
     $user = User::factory()->representative()->create();
     $representative = Representative::factory()->create(['user_id' => $user->id]);
@@ -98,5 +99,7 @@ test('enrollment does not create a second tuition in an existing monthly period'
 
     app(EnrollmentService::class)->enroll($student, $course, $user);
 
-    expect(Tuition::query()->whereBelongsTo($student)->count())->toBe(1);
+    expect(Tuition::query()->whereBelongsTo($student)->count())->toBe(2)
+        ->and(Tuition::query()->whereBelongsTo($student)->where('concept', TuitionConcept::Monthly)->count())->toBe(1)
+        ->and(Tuition::query()->whereBelongsTo($student)->where('concept', TuitionConcept::Enrollment)->count())->toBe(1);
 });

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\StudentLifecycleStatus;
 use App\Models\Representative;
 use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,6 +21,7 @@ class StudentFactory extends Factory
     {
         return [
             'representative_id' => Representative::factory(),
+            'lifecycle_status' => StudentLifecycleStatus::Active,
             'id_card' => fake()->unique()->numerify('175#######'),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),

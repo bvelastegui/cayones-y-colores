@@ -21,6 +21,7 @@ interface Tuition {
   generation_date: string;
   due_date: string;
   status: 'pending' | 'partial' | 'paid' | 'overdue';
+  concept: 'monthly' | 'enrollment';
   student: { first_name: string; last_name: string };
   payments: Payment[];
 }
@@ -46,11 +47,13 @@ const success = ref('');
 
 const filteredTuitions = computed(() => {
   if (!selectedStudent.value) {
-    return tuitions.value;
+    return tuitions.value.filter((tuition) => tuition.concept === 'monthly');
   }
 
   return tuitions.value.filter(
-    (tuition) => tuition.student_id === selectedStudent.value?.id,
+    (tuition) =>
+      tuition.concept === 'monthly' &&
+      tuition.student_id === selectedStudent.value?.id,
   );
 });
 

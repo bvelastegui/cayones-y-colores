@@ -3,6 +3,8 @@ import type { LucideIcon } from '@lucide/vue';
 import {
   Baby,
   Banknote,
+  CalendarRange,
+  ClipboardCheck,
   BookOpen,
   CreditCard,
   GraduationCap,
@@ -105,6 +107,12 @@ const adminItems = computed<NavItem[]>(() => {
     },
     { title: 'Docentes', url: '/admin/teachers', icon: GraduationCap },
     { title: 'Estudiantes', url: '/admin/students', icon: Baby },
+    {
+      title: 'Periodos académicos',
+      url: '/admin/academic-periods',
+      icon: CalendarRange,
+    },
+    { title: 'Matrículas', url: '/admin/enrollments', icon: ClipboardCheck },
     {
       title: 'Asignaciones',
       url: '/admin/course-teachers',

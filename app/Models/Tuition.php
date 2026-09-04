@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
 use Database\Factories\TuitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,15 +15,17 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $student_id
+ * @property int|null $enrollment_id
+ * @property TuitionConcept $concept
  * @property float $amount
  * @property Carbon $generation_date
- * @property Carbon $billing_period
+ * @property Carbon|null $billing_period
  * @property Carbon $due_date
  * @property TuitionStatus $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['student_id', 'amount', 'generation_date', 'billing_period', 'due_date', 'status'])]
+#[Fillable(['student_id', 'enrollment_id', 'concept', 'amount', 'generation_date', 'billing_period', 'due_date', 'status'])]
 class Tuition extends Model
 {
     /** @use HasFactory<TuitionFactory> */
@@ -39,6 +42,7 @@ class Tuition extends Model
             'billing_period' => 'date',
             'due_date' => 'date',
             'status' => TuitionStatus::class,
+            'concept' => TuitionConcept::class,
         ];
     }
 
@@ -48,6 +52,12 @@ class Tuition extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /** @return BelongsTo<Enrollment, $this> */
+    public function enrollment(): BelongsTo
+    {
+        return $this->belongsTo(Enrollment::class);
     }
 
     /**

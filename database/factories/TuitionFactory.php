@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
 use App\Models\Student;
 use App\Models\Tuition;
@@ -25,6 +26,7 @@ class TuitionFactory extends Factory
 
         return [
             'student_id' => Student::factory(),
+            'concept' => TuitionConcept::Monthly,
             'amount' => fake()->randomFloat(2, 100, 300),
             'generation_date' => $generationDate->format('Y-m-d'),
             'billing_period' => $generationDate->format('Y-m-01'),

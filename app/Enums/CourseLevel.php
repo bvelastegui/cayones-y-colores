@@ -54,7 +54,7 @@ enum CourseLevel: string
             self::Maternal2->value => 'Maternal 2',
             self::Initial1->value => 'Inicial 1',
             self::Initial2->value => 'Inicial 2',
-            self::FirstBasic->value => '1ro de Básica',
+            self::FirstBasic->value => 'Primero EGB',
         ];
     }
 

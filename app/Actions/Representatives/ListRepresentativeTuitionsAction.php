@@ -17,6 +17,7 @@ class ListRepresentativeTuitionsAction
         $tuitions = Tuition::query()
             ->with([
                 'student',
+                'enrollment.academicPeriod',
                 'payments' => fn ($query) => $query
                     ->orderByDesc('payment_date')
                     ->orderByDesc('id'),

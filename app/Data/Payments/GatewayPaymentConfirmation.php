@@ -8,6 +8,7 @@ final readonly class GatewayPaymentConfirmation
         public int $transactionId,
         public string $clientTransactionId,
         public int $amountInCents,
+        public string $currency,
         public int $statusCode,
         public string $transactionStatus,
     ) {}

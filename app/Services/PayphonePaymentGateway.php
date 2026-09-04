@@ -54,6 +54,7 @@ class PayphonePaymentGateway implements PaymentGateway
             transactionId: $this->requiredInteger($response, 'transactionId'),
             clientTransactionId: $this->requiredString($response, 'clientTransactionId'),
             amountInCents: $this->requiredInteger($response, 'amount'),
+            currency: $this->requiredString($response, 'currency'),
             statusCode: $this->requiredInteger($response, 'statusCode'),
             transactionStatus: $this->requiredString($response, 'transactionStatus'),
         );

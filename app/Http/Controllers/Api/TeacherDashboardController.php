@@ -6,9 +6,12 @@ use App\Actions\Teachers\CreateAcademicReportAction;
 use App\Actions\Teachers\ListCourseStudentsAction;
 use App\Actions\Teachers\ListTeacherCoursesAction;
 use App\Actions\Teachers\ListTeacherReportsAction;
+use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreTeacherReportRequest;
 use App\Models\Course;
+use App\Models\Student;
+use App\Services\EnrollmentAuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -69,5 +72,47 @@ class TeacherDashboardController extends Controller
         $report = $createReport->execute($teacher, $data);
 
         return response()->json($report->load('student'), Response::HTTP_CREATED);
+    }
+
+    public function careProfile(
+        Request $request,
+        Student $student,
+        EnrollmentAuditService $auditService,
+    ): JsonResponse {
+        $teacher = $request->user()->teacher;
+
+        if (! $teacher || ! $student->enrollments()
+            ->where('status', EnrollmentStatus::Active)
+            ->whereHas('course.teachers', fn ($query) => $query->whereKey($teacher->id))
+            ->exists()) {
+            return response()->json(['message' => 'No tienes acceso a la ficha de cuidado.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $auditService->recordAccess($student, $request->user(), 'teacher_care_profile', null, $request->ip());
+
+        $student->load([
+            'profile', 'medicalConditions', 'allergies', 'medications', 'healthInsurance', 'emergencyContacts',
+        ]);
+
+        return response()->json([
+            'student' => [
+                'id' => $student->id,
+                'full_name' => $student->full_name,
+                'preferred_name' => $student->profile?->preferred_name,
+            ],
+            'health' => $student->profile?->only([
+                'blood_type', 'pediatrician_name', 'pediatrician_phone', 'developmental_notes',
+                'care_instructions', 'medical_observations',
+            ]),
+            'medical_conditions' => $student->medicalConditions->map->only(['name', 'details', 'care_instructions']),
+            'allergies' => $student->allergies->map->only(['allergen', 'severity', 'reaction', 'response_instructions']),
+            'medications' => $student->medications->map->only(['name', 'dose', 'schedule', 'instructions']),
+            'health_insurance' => $student->healthInsurance?->only([
+                'has_insurance', 'provider', 'policy_number', 'plan_name', 'policy_holder', 'emergency_phone', 'expires_on',
+            ]),
+            'emergency_contacts' => $student->emergencyContacts->map->only([
+                'position', 'full_name', 'relationship', 'phone', 'alternate_phone', 'address', 'authorized_pickup',
+            ]),
+        ]);
     }
 }

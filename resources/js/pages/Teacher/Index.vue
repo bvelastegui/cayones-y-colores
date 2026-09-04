@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, GraduationCap, Plus } from '@lucide/vue';
+import { BookOpen, GraduationCap, Plus, Stethoscope } from '@lucide/vue';
 import { computed, onMounted, reactive, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +62,16 @@ interface Report {
   created_at: string;
 }
 
+interface CareProfile {
+  student: { id: number; full_name: string; preferred_name: string | null };
+  health: Record<string, string | null> | null;
+  medical_conditions: Record<string, string | null>[];
+  allergies: Record<string, string | null>[];
+  medications: Record<string, string | null>[];
+  health_insurance: Record<string, string | boolean | null> | null;
+  emergency_contacts: Record<string, string | boolean | number | null>[];
+}
+
 const token = localStorage.getItem('token') ?? '';
 
 const courses = ref<Course[]>([]);
@@ -73,6 +83,9 @@ const saving = ref(false);
 const error = ref('');
 const formError = ref('');
 const dialogOpen = ref(false);
+const careDialogOpen = ref(false);
+const careLoading = ref(false);
+const careProfile = ref<CareProfile | null>(null);
 
 const form = reactive({
   student_id: '',
@@ -224,6 +237,37 @@ async function submitReport(): Promise<void> {
   }
 }
 
+async function openCareProfile(student: Student): Promise<void> {
+  careDialogOpen.value = true;
+  careLoading.value = true;
+  careProfile.value = null;
+  error.value = '';
+
+  try {
+    const response = await fetch(
+      `/api/teacher/students/${student.id}/care-profile`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error('No tienes acceso a esta ficha de cuidado.');
+    }
+
+    careProfile.value = await response.json();
+  } catch (exception) {
+    error.value =
+      exception instanceof Error ? exception.message : 'Error desconocido.';
+    careDialogOpen.value = false;
+  } finally {
+    careLoading.value = false;
+  }
+}
+
 function levelBadge(
   level: string,
 ): 'default' | 'secondary' | 'outline' | 'destructive' {
@@ -334,6 +378,14 @@ onMounted(() => {
                   {{ student.last_name }}
                 </TableCell>
                 <TableCell class="text-right">
+                  <Button
+                    variant="outline"
+                    class="mr-2"
+                    @click="openCareProfile(student)"
+                  >
+                    <Stethoscope class="size-4" />
+                    Ficha de cuidado
+                  </Button>
                   <Dialog v-model:open="dialogOpen">
                     <DialogTrigger as-child>
                       <Button @click="openReport(student)">
@@ -451,6 +503,123 @@ onMounted(() => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog v-model:open="careDialogOpen">
+        <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Ficha de cuidado</DialogTitle>
+            <DialogDescription>
+              Información limitada para la atención diaria del estudiante. Este
+              acceso queda auditado.
+            </DialogDescription>
+          </DialogHeader>
+          <p
+            v-if="careLoading"
+            class="text-muted-foreground text-sm"
+          >
+            Cargando ficha…
+          </p>
+          <div
+            v-else-if="careProfile"
+            class="space-y-5 text-sm"
+          >
+            <div>
+              <p class="font-semibold">{{ careProfile.student.full_name }}</p>
+              <p
+                v-if="careProfile.student.preferred_name"
+                class="text-muted-foreground"
+              >
+                Nombre preferido: {{ careProfile.student.preferred_name }}
+              </p>
+            </div>
+            <section class="rounded-lg border p-4">
+              <h3 class="mb-2 font-semibold">Salud e instrucciones</h3>
+              <p>
+                Tipo de sangre:
+                {{ careProfile.health?.blood_type || 'No registrado' }}
+              </p>
+              <p>
+                Pediatra:
+                {{ careProfile.health?.pediatrician_name || 'No registrado' }}
+              </p>
+              <p class="mt-2 whitespace-pre-wrap">
+                {{
+                  careProfile.health?.care_instructions ||
+                  'Sin instrucciones especiales.'
+                }}
+              </p>
+              <p class="mt-2 whitespace-pre-wrap">
+                {{ careProfile.health?.medical_observations }}
+              </p>
+            </section>
+            <section class="grid gap-3 sm:grid-cols-3">
+              <div class="rounded-lg border p-3">
+                <h3 class="font-semibold">Condiciones</h3>
+                <p
+                  v-if="careProfile.medical_conditions.length === 0"
+                  class="text-muted-foreground"
+                >
+                  Ninguna declarada
+                </p>
+                <p
+                  v-for="item in careProfile.medical_conditions"
+                  :key="String(item.name)"
+                >
+                  {{ item.name }}
+                </p>
+              </div>
+              <div class="rounded-lg border p-3">
+                <h3 class="font-semibold">Alergias</h3>
+                <p
+                  v-if="careProfile.allergies.length === 0"
+                  class="text-muted-foreground"
+                >
+                  Ninguna declarada
+                </p>
+                <p
+                  v-for="item in careProfile.allergies"
+                  :key="String(item.allergen)"
+                >
+                  {{ item.allergen }} · {{ item.severity }}
+                </p>
+              </div>
+              <div class="rounded-lg border p-3">
+                <h3 class="font-semibold">Medicamentos</h3>
+                <p
+                  v-if="careProfile.medications.length === 0"
+                  class="text-muted-foreground"
+                >
+                  Ninguno declarado
+                </p>
+                <p
+                  v-for="item in careProfile.medications"
+                  :key="String(item.name)"
+                >
+                  {{ item.name }} · {{ item.dose }}
+                </p>
+              </div>
+            </section>
+            <section class="rounded-lg border p-4">
+              <h3 class="mb-2 font-semibold">Contactos de emergencia</h3>
+              <div
+                v-for="contact in careProfile.emergency_contacts"
+                :key="String(contact.position)"
+                class="mb-2 last:mb-0"
+              >
+                <p class="font-medium">
+                  {{ contact.full_name }} · {{ contact.relationship }}
+                </p>
+                <p class="text-muted-foreground">
+                  {{ contact.phone }}
+                  <span v-if="contact.alternate_phone"
+                    >· {{ contact.alternate_phone }}</span
+                  >
+                </p>
+              </div>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>

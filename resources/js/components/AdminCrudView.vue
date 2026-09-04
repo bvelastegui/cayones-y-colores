@@ -45,7 +45,14 @@ export interface FieldOption {
 export interface Field {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'select';
+  type:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'date'
+    | 'datetime-local'
+    | 'select';
   required?: boolean;
   options?: FieldOption[];
 }
@@ -446,6 +453,10 @@ defineExpose({ fetchPage });
               {{ getCellValue(row, column.key) }}
             </TableCell>
             <TableCell class="text-right">
+              <slot
+                name="actions-start"
+                :row="row"
+              />
               <slot
                 name="actions"
                 :row="row"

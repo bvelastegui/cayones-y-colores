@@ -5,7 +5,6 @@ import {
   BellOff,
   BookOpen,
   CreditCard,
-  GraduationCap,
   UserPlus,
   Users,
 } from '@lucide/vue';
@@ -26,7 +25,14 @@ import { usePushNotifications } from '@/composables/pushNotifications';
 
 interface Enrollment {
   status: string;
+  level?: { name: string } | null;
   course?: { level?: { name: string } } | null;
+}
+
+interface PortalNotification {
+  id: string;
+  read_at: string | null;
+  data: { message?: string; type?: string };
 }
 
 interface Tuition {
@@ -53,6 +59,7 @@ const push = usePushNotifications();
 
 const students = ref<Student[]>([]);
 const tuitions = ref<Tuition[]>([]);
+const notifications = ref<PortalNotification[]>([]);
 const loading = ref(false);
 const error = ref('');
 
@@ -93,27 +100,39 @@ async function fetchStudents(): Promise<void> {
   error.value = '';
 
   try {
-    const [studentsResponse, tuitionsResponse] = await Promise.all([
-      fetch('/api/me/students', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      }),
-      fetch('/api/me/tuitions', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      }),
-    ]);
+    const [studentsResponse, tuitionsResponse, notificationsResponse] =
+      await Promise.all([
+        fetch('/api/me/students', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }),
+        fetch('/api/me/tuitions', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }),
+        fetch('/api/notifications', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }),
+      ]);
 
-    if (!studentsResponse.ok || !tuitionsResponse.ok) {
+    if (
+      !studentsResponse.ok ||
+      !tuitionsResponse.ok ||
+      !notificationsResponse.ok
+    ) {
       throw new Error('Error al cargar los datos.');
     }
 
     students.value = await studentsResponse.json();
     tuitions.value = await tuitionsResponse.json();
+    notifications.value = await notificationsResponse.json();
 
     if (students.value.length > 0 && !selectedStudent.value) {
       const first = students.value[0];
@@ -140,6 +159,26 @@ function isActive(student: Student): boolean {
   return (
     student.enrollments?.some((enrollment) => enrollment.status === 'active') ??
     false
+  );
+}
+
+function latestEnrollment(student: Student): Enrollment | undefined {
+  return student.enrollments?.[0];
+}
+
+function enrollmentLabel(student: Student): string {
+  const status = latestEnrollment(student)?.status;
+
+  return (
+    {
+      draft: 'Ficha en borrador',
+      pending_payment: 'Pendiente de pago',
+      payment_in_progress: 'Pago en proceso',
+      paid_pending_assignment: 'Pendiente de asignación',
+      active: 'Matriculado',
+      finalized: 'Nivel finalizado',
+      graduated: 'Graduado',
+    }[status ?? ''] ?? 'Pendiente de matrícula'
   );
 }
 
@@ -252,6 +291,31 @@ onMounted(() => {
         </CardContent>
       </Card>
 
+      <Card v-if="notifications.length > 0 && !loading">
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-base">
+            <Bell class="size-5" /> Notificaciones
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-2">
+          <p
+            v-for="notification in notifications.slice(0, 3)"
+            :key="notification.id"
+            class="rounded-lg border p-3 text-sm"
+            :class="
+              notification.read_at
+                ? 'text-muted-foreground'
+                : 'border-primary/30 bg-primary/5 font-medium'
+            "
+          >
+            {{
+              notification.data.message ??
+              'Tienes una actualización en tu matrícula.'
+            }}
+          </p>
+        </CardContent>
+      </Card>
+
       <Card
         v-if="selectedStudent && !loading"
         class="border-primary/20 bg-primary/5"
@@ -269,32 +333,20 @@ onMounted(() => {
               </CardDescription>
             </div>
             <Badge :variant="isSelectedActive ? 'default' : 'secondary'">
-              {{ isSelectedActive ? 'Matriculado' : 'Pendiente de matrícula' }}
+              {{
+                selectedRecord ? enrollmentLabel(selectedRecord) : 'Pendiente'
+              }}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
           <div class="flex flex-wrap gap-2">
-            <Button
-              v-if="!isSelectedActive"
-              @click="enrollSelected"
-            >
+            <Button @click="enrollSelected">
               <UserPlus
                 class="size-4"
                 data-icon="inline-start"
               />
-              Matricular
-            </Button>
-            <Button
-              v-else
-              variant="outline"
-              disabled
-            >
-              <GraduationCap
-                class="size-4"
-                data-icon="inline-start"
-              />
-              Ver matrícula
+              {{ isSelectedActive ? 'Ver matrícula' : 'Continuar matrícula' }}
             </Button>
             <Button
               variant="outline"
@@ -356,9 +408,7 @@ onMounted(() => {
                   </CardDescription>
                 </div>
                 <Badge :variant="isActive(student) ? 'default' : 'secondary'">
-                  {{
-                    isActive(student) ? 'Matriculado' : 'Pendiente de matrícula'
-                  }}
+                  {{ enrollmentLabel(student) }}
                 </Badge>
               </div>
             </CardHeader>

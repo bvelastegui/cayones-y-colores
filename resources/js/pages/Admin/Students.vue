@@ -10,12 +10,14 @@ import AdminCrudView, {
 
 const token = localStorage.getItem('token') ?? '';
 const representativeOptions = ref<FieldOption[]>([]);
+const levelOptions = ref<FieldOption[]>([]);
 
 const columns: Column[] = [
   { key: 'id', label: 'ID' },
   { key: 'id_card', label: 'Cédula' },
   { key: 'first_name', label: 'Nombres' },
   { key: 'last_name', label: 'Apellidos' },
+  { key: 'level.name', label: 'Nivel' },
   { key: 'representative.last_name', label: 'Representante' },
 ];
 
@@ -23,6 +25,13 @@ const fields = ref<Field[]>([
   {
     name: 'representative_id',
     label: 'Representante',
+    type: 'select',
+    required: true,
+    options: [],
+  },
+  {
+    name: 'level_id',
+    label: 'Nivel asignado',
     type: 'select',
     required: true,
     options: [],
@@ -38,32 +47,45 @@ const fields = ref<Field[]>([
   },
 ]);
 
-async function fetchRepresentatives(): Promise<void> {
-  const response = await fetch('/api/representatives?per_page=1000', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json',
-    },
-  });
+async function fetchOptions(): Promise<void> {
+  const [representativesResponse, levelsResponse] = await Promise.all([
+    fetch('/api/representatives?per_page=1000', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    }),
+    fetch('/api/levels?per_page=1000', {
+      headers: { Accept: 'application/json' },
+    }),
+  ]);
 
-  if (!response.ok) {
+  if (!representativesResponse.ok || !levelsResponse.ok) {
     return;
   }
 
-  const data = (await response.json()) as {
+  const data = (await representativesResponse.json()) as {
     data: { id: number; first_name: string; last_name: string }[];
+  };
+  const levels = (await levelsResponse.json()) as {
+    data: { id: number; name: string }[];
   };
 
   representativeOptions.value = data.data.map((r) => ({
     value: r.id,
     label: `${r.first_name} ${r.last_name}`,
   }));
+  levelOptions.value = levels.data.map((level) => ({
+    value: level.id,
+    label: level.name,
+  }));
 
   fields.value[0].options = representativeOptions.value;
+  fields.value[1].options = levelOptions.value;
 }
 
 onMounted(() => {
-  void fetchRepresentatives();
+  void fetchOptions();
 });
 </script>
 

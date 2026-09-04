@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StudentLifecycleStatus;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -33,6 +34,8 @@ use OpenApi\Attributes as OA;
 /**
  * @property int $id
  * @property int $representative_id
+ * @property int|null $level_id
+ * @property StudentLifecycleStatus $lifecycle_status
  * @property string $id_card
  * @property string $first_name
  * @property string $last_name
@@ -41,7 +44,7 @@ use OpenApi\Attributes as OA;
  * @property Carbon|null $updated_at
  * @property-read string $full_name
  */
-#[Fillable(['representative_id', 'id_card', 'first_name', 'last_name', 'birth_date'])]
+#[Fillable(['representative_id', 'level_id', 'lifecycle_status', 'id_card', 'first_name', 'last_name', 'birth_date'])]
 class Student extends Model
 {
     /** @use HasFactory<StudentFactory> */
@@ -59,6 +62,7 @@ class Student extends Model
     {
         return [
             'birth_date' => 'date',
+            'lifecycle_status' => StudentLifecycleStatus::class,
         ];
     }
 
@@ -76,6 +80,66 @@ class Student extends Model
     public function representative(): BelongsTo
     {
         return $this->belongsTo(Representative::class);
+    }
+
+    /** @return BelongsTo<Level, $this> */
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(Level::class);
+    }
+
+    /** @return HasOne<StudentProfile, $this> */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    /** @return HasOne<StudentAddress, $this> */
+    public function residence(): HasOne
+    {
+        return $this->hasOne(StudentAddress::class);
+    }
+
+    /** @return HasOne<StudentLegalRepresentative, $this> */
+    public function legalRepresentative(): HasOne
+    {
+        return $this->hasOne(StudentLegalRepresentative::class);
+    }
+
+    /** @return HasOne<StudentBillingProfile, $this> */
+    public function billingProfile(): HasOne
+    {
+        return $this->hasOne(StudentBillingProfile::class);
+    }
+
+    /** @return HasOne<StudentHealthInsurance, $this> */
+    public function healthInsurance(): HasOne
+    {
+        return $this->hasOne(StudentHealthInsurance::class);
+    }
+
+    /** @return HasMany<StudentEmergencyContact, $this> */
+    public function emergencyContacts(): HasMany
+    {
+        return $this->hasMany(StudentEmergencyContact::class)->orderBy('position');
+    }
+
+    /** @return HasMany<StudentMedicalCondition, $this> */
+    public function medicalConditions(): HasMany
+    {
+        return $this->hasMany(StudentMedicalCondition::class);
+    }
+
+    /** @return HasMany<StudentAllergy, $this> */
+    public function allergies(): HasMany
+    {
+        return $this->hasMany(StudentAllergy::class);
+    }
+
+    /** @return HasMany<StudentMedication, $this> */
+    public function medications(): HasMany
+    {
+        return $this->hasMany(StudentMedication::class);
     }
 
     /**

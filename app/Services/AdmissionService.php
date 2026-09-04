@@ -37,6 +37,7 @@ class AdmissionService
 
             $student = Student::create([
                 'representative_id' => $representative->id,
+                'level_id' => $admission->level_id,
                 'id_card' => $this->generateDocumentNumber('STD'),
                 'first_name' => $admission->applicant_first_name,
                 'last_name' => $admission->applicant_last_name,

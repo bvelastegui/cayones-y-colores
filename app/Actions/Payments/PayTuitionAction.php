@@ -3,11 +3,16 @@
 namespace App\Actions\Payments;
 
 use App\Data\Payments\GatewayPaymentResult;
+use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PayphonePaymentStatus;
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
+use App\Models\Enrollment;
 use App\Models\PayphonePaymentAttempt;
 use App\Models\Tuition;
+use App\Models\User;
+use App\Services\EnrollmentAuditService;
 use App\Services\PaymentGatewayResolver;
 use App\Services\TuitionPaymentService;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,21 +26,26 @@ class PayTuitionAction
     public function __construct(
         private PaymentGatewayResolver $gatewayResolver,
         private TuitionPaymentService $tuitionPaymentService,
+        private EnrollmentAuditService $enrollmentAuditService,
     ) {}
 
     /** @param Collection<int, Tuition> $tuitions */
-    public function execute(Collection $tuitions, PaymentMethod $method): GatewayPaymentResult
-    {
+    public function execute(
+        Collection $tuitions,
+        PaymentMethod $method,
+        TuitionConcept $expectedConcept = TuitionConcept::Monthly,
+        ?User $actor = null,
+    ): GatewayPaymentResult {
         if ($tuitions->isEmpty()) {
             throw ValidationException::withMessages([
-                'tuition_ids' => ['Selecciona al menos una pensión.'],
+                'tuition_ids' => ['Selecciona al menos un rubro.'],
             ]);
         }
 
         $tuitionIds = $tuitions->modelKeys();
         sort($tuitionIds);
 
-        $attempt = DB::transaction(function () use ($tuitionIds): PayphonePaymentAttempt {
+        $attempt = DB::transaction(function () use ($tuitionIds, $expectedConcept, $actor): PayphonePaymentAttempt {
             $lockedTuitions = Tuition::query()
                 ->whereKey($tuitionIds)
                 ->orderBy('id')
@@ -44,8 +54,38 @@ class PayTuitionAction
 
             if ($lockedTuitions->count() !== count($tuitionIds)) {
                 throw ValidationException::withMessages([
-                    'tuition_ids' => ['Una de las pensiones seleccionadas ya no existe.'],
+                    'tuition_ids' => ['Uno de los rubros seleccionados ya no existe.'],
                 ]);
+            }
+
+            foreach ($lockedTuitions as $tuition) {
+                if ($tuition->concept !== $expectedConcept) {
+                    throw ValidationException::withMessages([
+                        'tuition_ids' => ['El pago contiene un tipo de rubro no permitido en esta operación.'],
+                    ]);
+                }
+            }
+
+            $enrollment = null;
+
+            if ($expectedConcept === TuitionConcept::Enrollment && $lockedTuitions->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'tuition_ids' => ['La matrícula debe pagarse sola en una transacción.'],
+                ]);
+            }
+
+            if ($expectedConcept === TuitionConcept::Enrollment) {
+                $enrollmentId = $lockedTuitions->firstOrFail()->enrollment_id;
+                $enrollment = $enrollmentId === null
+                    ? null
+                    : Enrollment::query()->lockForUpdate()->find($enrollmentId);
+
+                if (! $enrollment instanceof Enrollment
+                    || ! in_array($enrollment->status, [EnrollmentStatus::PendingPayment, EnrollmentStatus::PaymentInProgress], true)) {
+                    throw ValidationException::withMessages([
+                        'tuition_ids' => ['El rubro no pertenece a una matrícula pendiente de pago.'],
+                    ]);
+                }
             }
 
             $activeAttempt = PayphonePaymentAttempt::query()
@@ -67,14 +107,14 @@ class PayTuitionAction
                 }
 
                 throw ValidationException::withMessages([
-                    'tuition_ids' => ['Una de las pensiones ya está incluida en otro pago en proceso.'],
+                    'tuition_ids' => ['Uno de los rubros ya está incluido en otro pago en proceso.'],
                 ]);
             }
 
             $items = $lockedTuitions->map(function (Tuition $tuition): array {
                 if ($tuition->status === TuitionStatus::Paid) {
                     throw ValidationException::withMessages([
-                        'tuition_ids' => ['Una de las pensiones seleccionadas ya está pagada.'],
+                        'tuition_ids' => ['Uno de los rubros seleccionados ya está pagado.'],
                     ]);
                 }
 
@@ -82,7 +122,7 @@ class PayTuitionAction
 
                 if ($amountInCents <= 0) {
                     throw ValidationException::withMessages([
-                        'tuition_ids' => ['Una de las pensiones seleccionadas no tiene saldo pendiente.'],
+                        'tuition_ids' => ['Uno de los rubros seleccionados no tiene saldo pendiente.'],
                     ]);
                 }
 
@@ -102,6 +142,14 @@ class PayTuitionAction
 
             $attempt->items()->createMany($items->all());
 
+            if ($enrollment instanceof Enrollment) {
+                $enrollment->update([
+                    'status' => EnrollmentStatus::PaymentInProgress,
+                    'payment_started_at' => now(),
+                ]);
+                $this->enrollmentAuditService->record($enrollment, $actor, 'enrollment_payment_started');
+            }
+
             return $attempt;
         });
 
@@ -113,7 +161,9 @@ class PayTuitionAction
 
         try {
             $result = $this->gatewayResolver->resolve($method)->prepare(
-                'Pago de '.$attempt->items()->count().' pensiones',
+                $expectedConcept === TuitionConcept::Enrollment
+                    ? 'Pago de matrícula'
+                    : 'Pago de '.$attempt->items()->count().' pensiones',
                 $attempt->client_transaction_id,
                 $attempt->amount_in_cents,
             );
@@ -127,6 +177,13 @@ class PayTuitionAction
             return $result;
         } catch (Throwable $exception) {
             $attempt->update(['status' => PayphonePaymentStatus::Failed]);
+
+            if ($expectedConcept === TuitionConcept::Enrollment) {
+                Enrollment::query()
+                    ->whereIn('id', $attempt->items()->join('tuitions', 'tuitions.id', '=', 'payphone_payment_attempt_items.tuition_id')
+                        ->pluck('tuitions.enrollment_id')->filter())
+                    ->update(['status' => EnrollmentStatus::PendingPayment]);
+            }
 
             throw $exception;
         }

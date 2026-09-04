@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\TuitionConcept;
 use App\Enums\TuitionStatus;
 use App\Events\MonthlyTuitionsGenerated;
 use App\Models\Enrollment;
@@ -39,6 +40,7 @@ class TuitionService
                     'student_id' => $enrollment->student_id,
                     'billing_period' => $billingPeriod->toDateString(),
                 ], [
+                    'concept' => TuitionConcept::Monthly,
                     'amount' => $enrollment->course->level->monthly_fee,
                     'generation_date' => $generationDate->toDateString(),
                     'due_date' => $dueDate->toDateString(),
