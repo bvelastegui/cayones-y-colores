@@ -101,6 +101,7 @@ export default defineConfig({
     singleAttributePerLine: true,
     htmlWhitespaceSensitivity: 'css',
     ignorePatterns: [
+      '.ai/**',
       '.agents/**',
       '.claude/**',
       '.codex/**',
