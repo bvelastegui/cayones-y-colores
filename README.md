@@ -43,7 +43,7 @@ El sistema ofrece portales separados para administración, docentes y representa
 Todas las cuentas creadas por `ComplianceEnrollmentSeeder` usan la contraseña `password`.
 
 | Rol                    | Correo                                        | Contraseña | Escenario principal                                                                         |
-|------------------------|-----------------------------------------------|------------|---------------------------------------------------------------------------------------------|
+| ---------------------- | --------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------- |
 | Administrador          | `compliance.admin@cenestur.test`              | `password` | Gestión y auditoría del escenario completo                                                  |
 | Docente principal      | `compliance.teacher@cenestur.test`            | `password` | Docente principal de Maternal 1                                                             |
 | Docente principal      | `compliance.teacher.maternal-2@cenestur.test` | `password` | Curso de Maternal 2 con estudiantes activos                                                 |
@@ -56,7 +56,7 @@ Todas las cuentas creadas por `ComplianceEnrollmentSeeder` usan la contraseña `
 El seeder también crea estas cuentas adicionales, todas con la misma contraseña:
 
 | Tipo                   | Correos disponibles                                                                                                                         |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Docentes principales   | `compliance.teacher.inicial-1@cenestur.test`, `compliance.teacher.inicial-2@cenestur.test` y `compliance.teacher.primero-egb@cenestur.test` |
 | Docentes auxiliares    | `compliance.aux.maternal-1.1@cenestur.test` hasta `compliance.aux.maternal-1.4@cenestur.test`, y el mismo patrón para `maternal-2`          |
 | Familias de sobrecarga | `compliance.family01@cenestur.test` hasta `compliance.family13@cenestur.test`                                                               |
@@ -94,7 +94,7 @@ workflow [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
 Los siguientes secretos deben configurarse en el entorno `production` del repositorio:
 
 | Secreto              | Requerido | Descripción                                                                |
-|----------------------|-----------|----------------------------------------------------------------------------|
+| -------------------- | --------- | -------------------------------------------------------------------------- |
 | `DEPLOY_HOST`        | Sí        | Dominio o dirección IP del servidor                                        |
 | `DEPLOY_PORT`        | Sí        | Puerto SSH, por ejemplo `22`                                               |
 | `DEPLOY_USER`        | Sí        | Usuario SSH con acceso al directorio de la aplicación                      |
