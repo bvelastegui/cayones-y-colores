@@ -41,6 +41,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
       - name: Build production assets
         run: |
           pnpm install --frozen-lockfile
