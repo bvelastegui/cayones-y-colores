@@ -66,9 +66,9 @@ return new class extends Migration
         });
 
         Schema::table('enrollments', function (Blueprint $table): void {
-            $table->dropUnique('enrollments_student_id_course_id_unique');
-            $table->dropForeign('enrollments_student_id_foreign');
-            $table->dropForeign('enrollments_course_id_foreign');
+            $table->dropUnique(['student_id', 'course_id']);
+            $table->dropForeign(['student_id']);
+            $table->dropForeign(['course_id']);
         });
 
         Schema::table('enrollments', function (Blueprint $table): void {
