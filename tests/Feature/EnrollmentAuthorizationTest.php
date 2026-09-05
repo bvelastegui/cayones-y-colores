@@ -12,7 +12,7 @@ use App\Models\Teacher;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
-test('a representative cannot inspect course occupancy or edit another family enrollment', function () {
+test('a representative cannot inspect or edit another family enrollment', function () {
     $owner = User::factory()->representative()->create();
     $ownerRepresentative = Representative::factory()->create(['user_id' => $owner->id]);
     $student = Student::factory()->for($ownerRepresentative)->create();
@@ -22,7 +22,7 @@ test('a representative cannot inspect course occupancy or edit another family en
     Representative::factory()->create(['user_id' => $otherUser->id]);
     Sanctum::actingAs($otherUser);
 
-    $this->getJson("/api/me/students/{$student->id}/courses")->assertNotFound();
+    $this->getJson("/api/me/students/{$student->id}/enrollment")->assertForbidden();
     $this->putJson("/api/me/enrollments/{$enrollment->id}/form/health", [
         'developmental_notes' => '',
         'care_instructions' => '',

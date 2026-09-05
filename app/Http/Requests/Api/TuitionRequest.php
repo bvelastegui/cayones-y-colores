@@ -58,7 +58,7 @@ class TuitionRequest extends FormRequest
 
             $tuitionQuery = Tuition::query()
                 ->where('student_id', $studentId)
-                ->where('billing_period', Carbon::parse($generationDate)->startOfMonth()->toDateString());
+                ->whereDate('billing_period', Carbon::parse($generationDate)->startOfMonth());
 
             if ($tuition !== null) {
                 $tuitionQuery->whereKeyNot($tuition->getKey());

@@ -38,7 +38,7 @@ class TuitionService
             foreach ($enrollments as $enrollment) {
                 $tuition = Tuition::firstOrCreate([
                     'student_id' => $enrollment->student_id,
-                    'billing_period' => $billingPeriod->toDateString(),
+                    'billing_period' => $billingPeriod,
                 ], [
                     'concept' => TuitionConcept::Monthly,
                     'amount' => $enrollment->course->level->monthly_fee,
